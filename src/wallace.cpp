@@ -51,16 +51,33 @@ void create_finaladder_inst (std::queue<string>*& main_queue,
   std::queue<string> fin1;
   std::queue<string> fin2;
 
+
+  
   for (int j = 0; j < out_size; j++){
+
     if (flag || main_queue[j].size()>1) {
       flag = true;
+
+      bool b = false;
+      for (int i = j; main_queue[i].empty() && i<out_size; i++ )
+	if (i==out_size-1)
+	  b=true;
+      if(b)
+	break;
+      
       fin1.push (main_queue[j].empty() ? "1'b0" : main_queue[j].front());
+
       // final_in1 += (main_queue[j].empty() ? "1'b0" : main_queue[j].front());
-      main_queue[j].pop();
+
+      if (!main_queue[j].empty())
+	main_queue[j].pop();
+
       fin2.push (main_queue[j].empty() ? "1'b0" : main_queue[j].front());
       //final_in2 += (main_queue[j].empty() ? "1'b0" : main_queue[j].front());
-      main_queue[j].pop();
+      if (!main_queue[j].empty())
+	main_queue[j].pop();
       final_size++;
+
     } else {
       final_offset++;
       string cur = "assign result[" + to_string(j) + "] = "
@@ -69,6 +86,7 @@ void create_finaladder_inst (std::queue<string>*& main_queue,
       verilog.push(cur);
     }
   }
+
 
   while (!fin1.empty()) {
     final_in1 = fin1.front() + final_in1;
@@ -79,6 +97,7 @@ void create_finaladder_inst (std::queue<string>*& main_queue,
     fin1.pop();
   }
 
+
   while (!fin2.empty()) {
     final_in2 = fin2.front() + final_in2;
     if (fin2.size() > 1)
@@ -87,6 +106,7 @@ void create_finaladder_inst (std::queue<string>*& main_queue,
       final_in2 = "{" + final_in2;
     fin2.pop();
   }
+
 
   if (final_size > 0){
     string fin_inst = final_stage_adder + "_" + to_string (final_size)

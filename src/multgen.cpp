@@ -12,6 +12,8 @@ using namespace std;
 
 #include "wallace.h"
 
+#include "dadda.h"
+
 void print_strings (string* s, int size){
   for (int i = 0; i<size; i++)
     cout << s[i] << endl;
@@ -24,7 +26,7 @@ int main() {
   int  in2_size = 1024;
   string final_stage_adder = "RP";
   string pp_encoding = "USP";
-  string tree = "WT";
+  string tree = "DT";
 
   int pp_dim1, pp_dim2;
 
@@ -51,17 +53,34 @@ int main() {
   } else if (pp_encoding.compare ("SB4") == 0) {
     create_signedbr4pp (in1_size, in2_size, pp_matrix,
 		      pp_dim1, pp_dim2, verilog);
+  } else {
+    cout << "Bad PP Selection!" << endl;
+    return 1;
   }
     
 
   
   
   verilog.push("\n// Creating Summation Tree \n");
-  create_wallacetree (pp_matrix, final_stage_adder, pp_dim1, pp_dim2,
-		      in1_size + in2_size,
-		      verilog,
-		      adder_size);
-  verilog.push ("endmodule\n");
+
+  if (tree.compare ("WT") == 0) {
+  
+    create_wallacetree (pp_matrix, final_stage_adder, pp_dim1, pp_dim2,
+			in1_size + in2_size,
+			verilog,
+			adder_size);
+    
+  } else if (tree.compare ("DT") == 0){
+     create_daddatree (pp_matrix, final_stage_adder, pp_dim1, pp_dim2,
+			in1_size + in2_size,
+			verilog,
+			adder_size);
+  } else {
+    cout << "Bad Summation tree Selection!" << endl;
+    return 1;
+  }
+  
+  verilog.push ("endmodule\n\n");
 
   create_rp_adder (adder_size, verilog);
 

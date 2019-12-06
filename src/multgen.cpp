@@ -22,10 +22,10 @@ void print_strings (string* s, int size){
 int main() {
   string** pp_matrix;
 
-  int  in1_size = 1024;
-  int  in2_size = 1024;
+  int  in1_size = 64;
+  int  in2_size = 64;
   string final_stage_adder = "RP";
-  string pp_encoding = "USP";
+  string pp_encoding = "UB4";
   string tree = "DT";
 
   int pp_dim1, pp_dim2;
@@ -53,6 +53,9 @@ int main() {
   } else if (pp_encoding.compare ("SB4") == 0) {
     create_signedbr4pp (in1_size, in2_size, pp_matrix,
 		      pp_dim1, pp_dim2, verilog);
+  } else if (pp_encoding.compare ("UB4") == 0) {
+    create_unsignedbr4pp (in1_size, in2_size, pp_matrix,
+			  pp_dim1, pp_dim2, verilog);
   } else {
     cout << "Bad PP Selection!" << endl;
     return 1;

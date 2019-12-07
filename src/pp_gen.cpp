@@ -112,13 +112,13 @@ void create_signedpp (int m, int n,
 		    + to_string(n)
 		    + "{IN1["
 		    + to_string(i)
-		    + "]}} & IN2) ^ (1'b1<<" + to_string(n-1) + ");");
+		    + "]}} & IN2) ^ ((1'b1)<<" + to_string(n-1) + ");");
     else
       verilog.push ("assign pp" + to_string(i)  + " = ({"
 		    + to_string(n)
 		    + "{IN1["
 		    + to_string(i)
-		    + "]}} & IN2) ^ (1'b1<<" + to_string(n-1) + ");");
+		    + "]}} & IN2) ^ ((1'b1)<<" + to_string(n-1) + ");");
   }
 
   pp_matrix[m] = new string[pp_dim2];

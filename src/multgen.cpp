@@ -49,9 +49,9 @@ void interact_with_user (int argc, char **argv,
   } else if (argc == 6){
     sscanf(argv[1], "%d", &in1_size);
     sscanf(argv[2], "%d", &in2_size);
-    tree = argv[3];
-    final_stage_adder = argv[4];
-    pp_encoding = argv[5];
+    pp_encoding = argv[3];
+    tree = argv[4];
+    final_stage_adder = argv[5];
   } else if (argc <= 1) {
 
     string s = "";

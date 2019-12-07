@@ -67,6 +67,70 @@ void create_unsignedpp (int m, int n,
 }
 
 
+void create_signedpp (int m, int n,
+		      string**& pp_matrix,
+		      int& pp_dim1,
+		      int& pp_dim2,
+		      std::queue<string>& verilog){
+
+  pp_dim1 = m+1;
+  pp_dim2 = n+m;
+
+
+  if (m != n) {
+    cout << "Simple signed partial products are only supported when IN1 and IN2 has the same dimensions." << endl;
+    return;
+  }
+
+
+  verilog.push ( "wire logic const1;");
+
+  verilog.push ( "assign const1 = 1'b1;");
+  
+  pp_matrix = new string*[pp_dim1];
+
+  for (int i = 0; i<m; i++)
+    verilog.push ( "wire logic [" + to_string(n-1) + ":0] pp" + to_string(i) + ";");
+
+  for (int i = 0; i < m; i++){
+    pp_matrix[i] = new string[pp_dim2];
+    for (int j = 0; j < i; j++){
+      pp_matrix[i][j] = "";
+    }
+    for (int j = 0; j < n; j++){
+      string cur;
+      cur = "pp" + to_string(i) + "[" + to_string(j) + "]";
+      pp_matrix[i][j+i] = cur;
+    }
+    
+    for (int j = n+i; j < pp_dim2; j++){
+      pp_matrix[i][j] = "";
+    }
+
+    if (i==m-1)
+      verilog.push ("assign pp" + to_string(i)  + " = ~({"
+		    + to_string(n)
+		    + "{IN1["
+		    + to_string(i)
+		    + "]}} & IN2) ^ (1'b1<<" + to_string(n-1) + ");");
+    else
+      verilog.push ("assign pp" + to_string(i)  + " = ({"
+		    + to_string(n)
+		    + "{IN1["
+		    + to_string(i)
+		    + "]}} & IN2) ^ (1'b1<<" + to_string(n-1) + ");");
+  }
+
+  pp_matrix[m] = new string[pp_dim2];
+
+  pp_matrix[m][n] = "const1";
+  pp_matrix[m][m+n-1] = "const1";
+
+  //print_pp(pp_matrix, pp_dim1, pp_dim2);
+  
+}
+
+
 
 void create_signedbr4pp (int m, int n,
 			string**& pp_matrix,

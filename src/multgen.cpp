@@ -44,7 +44,7 @@ void interact_with_user (int argc, char **argv,
      in1_size = 8;
      in2_size = 8;
      final_stage_adder = "KS";
-     pp_encoding = "USP";
+     pp_encoding = "SSP";
      tree = "WT";
   } else if (argc == 6){
     sscanf(argv[1], "%d", &in1_size);
@@ -78,18 +78,22 @@ void interact_with_user (int argc, char **argv,
     while(1) {
       
       cout << "1. Simple Unsigned " << endl;
-      cout << "2. Booth radix-4 Unsigned  " << endl;
-      cout << "3. Booth radix-4 Signed " << endl;
+      cout << "2. Simple Signed (Baugh-Wooley)" << endl;
+      cout << "3. Booth radix-4 Unsigned  " << endl;
+      cout << "4. Booth radix-4 Signed " << endl;
 
       cout << "Select Partial Product Generation Algorithm: ";   
       cin >> s;
       if (s.compare ("1") == 0) {
 	pp_encoding = "USP";
 	break;
-      }else if (s.compare ("2") == 0)  {
+      }else  if (s.compare ("2") == 0) {
+	pp_encoding = "SSP";
+	break;
+      }else if (s.compare ("3") == 0)  {
 	pp_encoding = "UB4";
 	break;
-      } else if (s.compare ("3") == 0) {
+      } else if (s.compare ("4") == 0) {
 	pp_encoding = "SB4";
 	break;
       }
@@ -106,7 +110,7 @@ void interact_with_user (int argc, char **argv,
       cout << "4. Kogge-Stone Adder " << endl;
       //cout << "3. Booth radix-4 Signed " << endl;
 
-      cout << "Select Partial Product Generation Algorithm: ";   
+      cout << "Select Final Stage Adder Algorithm: ";   
       cin >> s;
       if (s.compare ("1") == 0) {
 	final_stage_adder = "RP";
@@ -176,16 +180,24 @@ int main(int argc, char **argv) {
 		+ to_string(in2_size);
 
   verilog.push ("module " + module_name + "(");
+  verilog.push("indent");
+  verilog.push("indent");
   verilog.push ("input logic [" + to_string(in1_size - 1) + ":0] IN1," );
   verilog.push ("input logic [" + to_string(in2_size - 1) + ":0] IN2," );
   verilog.push ("output logic [" + to_string(in2_size + in1_size - 1) + ":0] result);" );
-
+  verilog.push("outdent");
+  verilog.push("");
+  
   verilog.push("\n// Creating Partial Products \n");
   
   if (pp_encoding.compare ("USP") == 0) {
     create_unsignedpp (in1_size, in2_size, pp_matrix,
 		      pp_dim1, pp_dim2, verilog);
-  } else if (pp_encoding.compare ("SB4") == 0) {
+  } else if (pp_encoding.compare ("SSP") == 0) {
+    create_signedpp (in1_size, in2_size, pp_matrix,
+			pp_dim1, pp_dim2, verilog);
+  }
+  else if (pp_encoding.compare ("SB4") == 0) {
     create_signedbr4pp (in1_size, in2_size, pp_matrix,
 		      pp_dim1, pp_dim2, verilog);
   } else if (pp_encoding.compare ("UB4") == 0) {
@@ -219,6 +231,9 @@ int main(int argc, char **argv) {
   }
   
   verilog.push ("endmodule\n\n");
+
+  verilog.push("outdent");
+  verilog.push("");
 
   if (final_stage_adder.compare ("RP") == 0)
     create_rp_adder (adder_size, verilog); 

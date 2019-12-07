@@ -13,27 +13,38 @@ using namespace std;
 void create_ha_fa (std::queue<string>& verilog){
 
   verilog.push ("module ha (");
+  verilog.push("indent");
+  verilog.push("indent");
   verilog.push ("input logic a,");
   verilog.push ("input logic b,");
   verilog.push ("output logic s,");
   verilog.push ("output logic c);");
+  verilog.push("outdent");
+  verilog.push("");
   verilog.push ("assign s = a ^ b;");
   verilog.push ("assign c = a & b;");
   verilog.push ("endmodule");
+  verilog.push("outdent");
+  verilog.push("");
 
   verilog.push ("\n");
 
 
   verilog.push ("module fa (");
+  verilog.push("indent");
+  verilog.push("indent");
   verilog.push ("input logic x,");
   verilog.push ("input logic y,");
   verilog.push ("input logic z,");
-
   verilog.push ("output logic s,");
   verilog.push ("output logic c);");
+  verilog.push("outdent");
+  verilog.push("");
   verilog.push ("assign s = x ^ y ^ z;");
   verilog.push ("assign c = (x & y) | (x & z) | (y & z);");
   verilog.push ("endmodule");
+  verilog.push("outdent");
+  verilog.push("");
 
   verilog.push ("");
 

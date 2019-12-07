@@ -96,7 +96,7 @@ void create_daddatree (string** pp_matrix,
 	  cur.pop();
 	  string inst = "logic s" + to_string(cnt)
 	    + " ,c" + to_string(cnt) + "; \n";
-	  inst += "fa fa" + to_string(cnt)
+	  inst += "    fa fa" + to_string(cnt)
 	    + " (" + var1 + ", " + var2 + ", " + var3
 	    + ", s" + to_string(cnt) + ", c" + to_string(cnt) + ");";
 
@@ -116,7 +116,7 @@ void create_daddatree (string** pp_matrix,
 	  cur.pop();
 	  string inst = "logic s" + to_string(cnt)
 	    + " ,c" + to_string(cnt) + ";\n";
-	  inst += "ha ha" + to_string(cnt)
+	  inst += "    ha ha" + to_string(cnt)
 	    + " (" + var1 + ", " + var2
 	    + ", s" + to_string(cnt) + ", c" + to_string(cnt) + ");";
 

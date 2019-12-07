@@ -385,14 +385,7 @@ void create_unsignedbr4pp (int m, int n,
   //   verilog.pop();
   // }
 
-   
-
   //  cout << endl;
-
-
-  
-    
-   
 
   //print_pp(pp_matrix, pp_dim1, pp_dim2);
 

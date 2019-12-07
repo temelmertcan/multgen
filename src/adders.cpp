@@ -31,7 +31,8 @@ void create_ha_fa (std::queue<string>& verilog){
 
   verilog.push ("output logic s,");
   verilog.push ("output logic c);");
-  verilog.push ("assign {c,s} = x + y + z;");
+  verilog.push ("assign s = x ^ y ^ z;");
+  verilog.push ("assign c = (x & y) | (x & z) | (y & z);");
   verilog.push ("endmodule");
 
   verilog.push ("");
@@ -277,6 +278,64 @@ void create_lf_adder (int size, std::queue<string>& verilog){
   
   verilog.push("");
   verilog.push("// LF postprocess ");
+
+  ppx_postprocess (size, index, g, p, verilog);
+
+  delete[] p;
+  delete[] g;
+
+  delete[] ptmp;
+  delete[] gtmp;
+  
+}
+
+
+
+void create_ks_adder (int size, std::queue<string>& verilog){
+ 
+  int index = 0;
+  
+  string* g = new string[size];
+  string* p = new string[size];
+
+  
+  string* gtmp = new string[size];
+  string* ptmp = new string[size];
+
+  ppx_preprocess(size, index, "KS", gtmp, ptmp, verilog);
+  pgtmp_to_pg(size, gtmp, g);
+  pgtmp_to_pg(size, ptmp, p);
+  
+  int stage=0;
+
+
+  // lf midsteps
+  for (int diff = 1; diff < size; diff *= 2){
+    verilog.push("");
+    verilog.push("// KS stage " + to_string(++stage));
+    
+    
+    for (int i=diff; i < size; i++){
+
+      string new_p = "p_" + to_string(stage)+ "_" + to_string(i);
+      string new_g = "g_" + to_string(stage)+ "_" + to_string(i);
+      
+      verilog.push ("wire logic "+ new_p + ";");
+      verilog.push ("wire logic "+ new_g + ";");
+      
+      verilog.push ("assign "+ new_p + " = " + p[i] + " & " + p[i-diff] + ";");
+      verilog.push ("assign "+ new_g + " = (" + p[i] + " & " + g[i-diff] + ") | " + g[i] + ";");
+      
+      gtmp[i] =  new_g;
+      ptmp[i] =  new_p;
+    }
+    
+    pgtmp_to_pg(size, gtmp, g);
+    pgtmp_to_pg(size, ptmp, p);
+  }
+  
+  verilog.push("");
+  verilog.push("// KS postprocess ");
 
   ppx_postprocess (size, index, g, p, verilog);
 

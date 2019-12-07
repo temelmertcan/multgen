@@ -41,9 +41,9 @@ void interact_with_user (int argc, char **argv,
  
   
   if (argc == 2 && strcmp(argv[1], "-def") == 0) {
-     in1_size = 64;
-     in2_size = 64;
-     final_stage_adder = "LF";
+     in1_size = 8;
+     in2_size = 8;
+     final_stage_adder = "KS";
      pp_encoding = "USP";
      tree = "WT";
   } else if (argc == 6){
@@ -103,6 +103,7 @@ void interact_with_user (int argc, char **argv,
       cout << "1. Ripple Carry Adder " << endl;
       cout << "2. Han-Carlson Adder " << endl;
       cout << "3. Ladner-Fischer Adder " << endl;
+      cout << "4. Kogge-Stone Adder " << endl;
       //cout << "3. Booth radix-4 Signed " << endl;
 
       cout << "Select Partial Product Generation Algorithm: ";   
@@ -116,10 +117,10 @@ void interact_with_user (int argc, char **argv,
       }else if (s.compare ("3") == 0)  {
 	final_stage_adder = "LF";
 	break;
-      } // else if (s.compare ("3") == 0) {
-      // 	final_stage_adder = "SB4";
-      // 	break;
-      // }
+      } else if (s.compare ("4") == 0)  {
+	final_stage_adder = "KS";
+	break;
+      }
       else
 	cout << "Invalid Selection!" << endl;
 
@@ -225,6 +226,8 @@ int main(int argc, char **argv) {
     create_hc_adder (adder_size, verilog);
   else if (final_stage_adder.compare ("LF") == 0)
     create_lf_adder (adder_size, verilog);
+  else if (final_stage_adder.compare ("KS") == 0)
+    create_ks_adder (adder_size, verilog);
   else{
     cout << "Bad Final Stage Adder Selection!" << endl;
     return 1;

@@ -1,0 +1,24 @@
+An efficient integer multiplier generator. This version can generate these multipliers:
+- Wallace Tree
+- Dadda Tree
+with these partial products:
+- Simple Signed
+- Simple Unsigned
+- Signed Booth radix-4
+- Unsigned Booth radix-4
+and with these final stage adders:
+- Ladner-Fisher
+- Kogge Stone
+- Han-Carlson
+- Ripple-Carry
+
+You can use these generator as follows:
+
+1. make
+2. ./multgen
+3. Follow the instructions to create the integer multiplier of yoru choice!
+
+
+Mertcan Temel
+Electrical and Computer Engineering
+University of Texas at Austin

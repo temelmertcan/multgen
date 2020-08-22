@@ -81,6 +81,7 @@ void interact_with_user (int argc, char **argv,
       cout << "2. Simple Signed (Baugh-Wooley)" << endl;
       cout << "3. Booth radix-4 Unsigned  " << endl;
       cout << "4. Booth radix-4 Signed " << endl;
+      cout << "5. Booth radix-2 Signed " << endl;
 
       cout << "Select Partial Product Generation Algorithm: ";   
       cin >> s;
@@ -95,6 +96,9 @@ void interact_with_user (int argc, char **argv,
 	break;
       } else if (s.compare ("4") == 0) {
 	pp_encoding = "SB4";
+	break;
+      } else if (s.compare ("5") == 0) {
+	pp_encoding = "SB2";
 	break;
       }
       else
@@ -196,9 +200,11 @@ int main(int argc, char **argv) {
   } else if (pp_encoding.compare ("SSP") == 0) {
     create_signedpp (in1_size, in2_size, pp_matrix,
 			pp_dim1, pp_dim2, verilog);
-  }
-  else if (pp_encoding.compare ("SB4") == 0) {
+  } else if (pp_encoding.compare ("SB4") == 0) {
     create_signedbr4pp (in1_size, in2_size, pp_matrix,
+		      pp_dim1, pp_dim2, verilog);
+  } else if (pp_encoding.compare ("SB2") == 0) {
+    create_signedbr2pp (in1_size, in2_size, pp_matrix,
 		      pp_dim1, pp_dim2, verilog);
   } else if (pp_encoding.compare ("UB4") == 0) {
     create_unsignedbr4pp (in1_size, in2_size, pp_matrix,

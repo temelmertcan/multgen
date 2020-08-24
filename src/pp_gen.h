@@ -8,6 +8,8 @@
 using namespace std;
 
 
+void print_pp (string** pp, int m, int n, std::queue<string>& verilog, bool to_file);
+
 void create_signedpp (int m, int n,
 		      string**& pp_matrix,
 		      int& pp_dim1,

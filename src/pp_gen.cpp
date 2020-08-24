@@ -12,16 +12,37 @@ using namespace std;
 
 #include "pp_gen.h"
 
-void print_pp (string** pp, int m, int n){
+void print_pp (string** pp, int m, int n, std::queue<string>& verilog, bool to_file){
 
+
+  if (n > 64)
+    return;
+  
+  unsigned long len = 4;
   for (int i=0; i<m; i++){
     for (int j=0; j<n; j++){
-      if (pp[i][j] != "")
-	cout << pp[i][j] << " ";
-      else
-	cout << "   --   ";
+      len = max (pp[i][j].size(), len);
     }
-  cout << endl;
+  }
+  len++;
+
+  for (int i=0; i<m; i++){
+    string line = (to_file ? " // " : "");
+    for (int j=0; j<n; j++){
+      if (pp[i][j] != ""){
+	line += pp[i][j];
+	
+	for (int k = pp[i][j].size(); k<len; k++)
+	   line += " ";
+      }
+      else{
+	line += "  --";
+	for (int k = 4; k<len; k++)
+	  line+= " ";
+      }
+    }
+    if (to_file) verilog.push(line);
+    else cout << line << endl;
   }
 
   // cout << "here" << endl;
@@ -64,6 +85,9 @@ void create_unsignedpp (int m, int n,
 		   + "]}} & IN2;");
   }
 
+
+  print_pp(pp_matrix, pp_dim1, pp_dim2, verilog, true);
+  
 }
 
 
@@ -125,6 +149,8 @@ void create_signedpp (int m, int n,
 
   pp_matrix[m][n] = "const1";
   pp_matrix[m][m+n-1] = "const1";
+
+  print_pp(pp_matrix, pp_dim1, pp_dim2, verilog, true);
 
   //print_pp(pp_matrix, pp_dim1, pp_dim2);
   
@@ -274,6 +300,8 @@ void create_signedbr2pp (int m, int n,
 
   //print_pp(pp_matrix, pp_dim1, pp_dim2);
 
+
+  print_pp(pp_matrix, pp_dim1, pp_dim2, verilog, true);
    
 }
 
@@ -452,7 +480,8 @@ void create_signedbr4pp (int m, int n,
   //  cout << endl;
 
 
-  
+
+  print_pp(pp_matrix, pp_dim1, pp_dim2, verilog, true);
     
    
 
@@ -619,6 +648,8 @@ void create_unsignedbr4pp (int m, int n,
   //  cout << endl;
 
   //print_pp(pp_matrix, pp_dim1, pp_dim2);
+
+  print_pp(pp_matrix, pp_dim1, pp_dim2, verilog, true);
 
    
 }

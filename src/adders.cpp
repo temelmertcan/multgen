@@ -53,11 +53,14 @@ void create_ha_fa (std::queue<string>& verilog){
 void create_rp_adder (int size, std::queue<string>& verilog){
 
   verilog.push ("module RP_" + to_string(size) + " ( ");
-
+  verilog.push("indent");
+  verilog.push("indent");
   verilog.push ("input logic [" + to_string(size-1) + ":0] IN1,");
   verilog.push ("input logic [" + to_string(size-1) + ":0] IN2,");
   verilog.push ("output logic [" + to_string(size) + ":0] OUT);");
-
+  verilog.push("outdent");
+   verilog.push("");
+ 
   string carry_decs = "logic ";
   for (int i=0; i < size+1; i++){
     carry_decs+= "C" + to_string(i);
@@ -80,6 +83,9 @@ void create_rp_adder (int size, std::queue<string>& verilog){
 
   verilog.push ("assign OUT[" + to_string(size) + "] = C" + to_string(size-1) + ";");
 
+
+  verilog.push("outdent");
+  verilog.push("");
   verilog.push("endmodule");
 
   verilog.push("");

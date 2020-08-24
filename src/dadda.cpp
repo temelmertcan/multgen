@@ -50,12 +50,15 @@ void print_queue (std::queue<string>* q,
 }
 
 void create_daddatree (string** pp_matrix,
-			 string final_stage_adder,
-			 int pp_dim1,
-			 int pp_dim2,
-			 int out_size,
-			 std::queue<string>& verilog,
-			 int& adder_size){
+		       string final_stage_adder,
+		       int pp_dim1,
+		       int pp_dim2,
+		       int out_size,
+		       bool create_fin_adder,
+		       bool signed_mult,
+		       std::queue<string>& verilog,
+		       int& adder_size
+		       ){
 
   std::queue<string>* main_queue = new std::queue<string>[out_size];
   std::queue<string>* temp_queue = new std::queue<string>[out_size];
@@ -81,6 +84,8 @@ void create_daddatree (string** pp_matrix,
   for (int phase = 0; phase < coeffs_size; phase++) {
     
     // Step 1: sum the stuff in main_queue with fa/ha
+    verilog.push("");
+    verilog.push("// Dadda Summation Stage " + to_string(phase+1));
     int carrysize = 0;
     
     for (int j = 0; j < out_size; j++){
@@ -139,13 +144,21 @@ void create_daddatree (string** pp_matrix,
     //print_queue(main_queue, out_size);
 
   }
-  
 
-  create_finaladder_inst (main_queue,
-  			  final_stage_adder,
-  			  out_size,
-  			  verilog,
-  			  adder_size);
+  verilog.push("");
+
+  if (create_fin_adder)
+    create_finaladder_inst (main_queue,
+			    final_stage_adder,
+			    out_size,
+			    verilog,
+			    adder_size);
+  else
+    create_two_result_vectors (main_queue,
+			       out_size,
+			       verilog,
+			       signed_mult,
+			       adder_size);
   
 
    delete[] temp_queue;

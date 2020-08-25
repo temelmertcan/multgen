@@ -44,6 +44,12 @@ void create_signedbr2pp (int m, int n,
 			int& pp_dim2,
 			 std::queue<string>& verilog);
 
+void create_unsignedbr2pp (int m, int n,
+			   string**& pp_matrix,
+			   int& pp_dim1,
+			   int& pp_dim2,
+			   std::queue<string>& verilog);
+
 
 
 void create_unsignedbr2pp (int m, int n,

@@ -35,7 +35,9 @@ string convertToString(char* a, int size)
 int interact_with_user (int argc, char **argv,
 			int& in1_size,
 			int& in2_size,
+			int& in3_size,
 			int& out_size,
+			bool& signed_mult,
 			string& final_stage_adder,
 			string& pp_encoding,
 			string& tree,
@@ -65,6 +67,7 @@ int interact_with_user (int argc, char **argv,
 
       cout << "1. Stand-alone Multiplier " << endl;
       cout << "2. Merged Four Multipliers " << endl;
+      //cout << "2.  " << endl;
 
       cout << "Select Multiplier Type: ";
       cin >> s;
@@ -73,6 +76,9 @@ int interact_with_user (int argc, char **argv,
 	break;
       }else if (s.compare ("2") == 0)  {
 	main_type = "FourMult";
+	break;
+      }else if (s.compare ("3") == 0)  {
+	main_type = "FMA";
 	break;
       } else
 	cout << "Invalid Selection!" << endl;
@@ -99,35 +105,50 @@ int interact_with_user (int argc, char **argv,
 
     while(1) {
 
-      cout << "1. Simple Unsigned " << endl;
-      cout << "2. Simple Signed (Baugh-Wooley)" << endl;
-      cout << "3. Booth radix-4 Unsigned  " << endl;
-      cout << "4. Booth radix-4 Signed " << endl;
-      cout << "5. Booth radix-2 Signed " << endl;
+      cout << "1. Signed " << endl;
+      cout << "2. Unsigned" << endl;
 
-      cout << "Select Partial Product Generation Algorithm: ";
+      cout << "Signed or Unsigned Multiplication?: ";
       cin >> s;
       if (s.compare ("1") == 0) {
-	pp_encoding = "USP";
+	signed_mult = true;
 	break;
       }else  if (s.compare ("2") == 0) {
-	pp_encoding = "SSP";
+	signed_mult = false;
 	break;
-      }else if (s.compare ("3") == 0)  {
-	pp_encoding = "UB4";
-	break;
-      } else if (s.compare ("4") == 0) {
-	pp_encoding = "SB4";
-	break;
-      } else if (s.compare ("5") == 0) {
-	pp_encoding = "SB2";
-	break;
-      }
-      else
+      }else
 	cout << "Invalid Selection!" << endl;
 
     }
 
+    
+    while(1) {
+
+      cout << "1. Simple" << endl;
+      cout << "2. Booth radix-2" << endl;
+      cout << "3. Booth radix-4" << endl;
+
+      cout << "Select Partial Product Generation Algorithm: ";
+      cin >> s;
+      if (s.compare ("1") == 0) {
+	pp_encoding = "SP";
+	break;
+      }else  if (s.compare ("2") == 0) {
+	pp_encoding = "B2";
+	break;
+      }else if (s.compare ("3") == 0)  {
+	pp_encoding = "B4";
+	break;
+      }else
+	cout << "Invalid Selection!" << endl;
+
+    }
+
+    if (signed_mult)
+	pp_encoding = "S" + pp_encoding;
+    else
+      	pp_encoding = "U" + pp_encoding;
+    
     while(1) {
 
       cout << "1. Ripple Carry Adder " << endl;
@@ -157,10 +178,10 @@ int interact_with_user (int argc, char **argv,
     }
     
     if (main_type.compare("StandAlone") == 0){
-      cout << "Enter IN1 size: ";
+      cout << "Enter IN1 (Multiplier) size: ";
       cin >> in1_size;
 
-      cout << "Enter IN2 size: ";
+      cout << "Enter IN2 (Multiplicand) size: ";
       cin >> in2_size;
 
       cout << "Enter Output size (any value less than \""<< in1_size+in2_size << "\" will truncate the result): ";
@@ -174,9 +195,32 @@ int interact_with_user (int argc, char **argv,
 	out_size = in1_size+in2_size;
     }
 
-    if (main_type.compare("StandAlone")){
+    if (main_type.compare("FMA") == 0){
+      cout << "Enter IN1 (Multiplier) size: ";
+      cin >> in1_size;
+
+      cout << "Enter IN2 (Multiplicand) size: ";
+      cin >> in2_size;
+
+      cout << "Enter IN3 size: ";
+      cin >> in3_size;
+
+      cout << "Enter Output size (any value less than \""
+	   << max(in1_size+in2_size+1,in3_size+1)
+	   << "\" will truncate the result): ";
+      string in = "";
+      cin >> in;
+      if (std::stringstream(in) >> out_size) {
+      }
+      else out_size = max(in1_size+in2_size+1,in3_size+1);
+
+      if (out_size > max(in1_size+in2_size+1,in3_size+1))
+	out_size = max(in1_size+in2_size+1,in3_size+1);
+    }
+
+    if (main_type.compare("FourMult") == 0){
       while(1){
-	cout << "Enter input vector size: ";
+	cout << "Enter input vector (multiplier and multiplicand) size: ";
 	cin >> in1_size;
 	in2_size = in1_size;
 	out_size = in1_size + in2_size;
@@ -253,6 +297,10 @@ int create_mult ( int  in1_size,
   } else if (pp_encoding.compare ("SB2") == 0) {
     create_signedbr2pp (in1_size, in2_size, pp_matrix,
 			pp_dim1, pp_dim2, verilog);
+  } else if (pp_encoding.compare ("UB2") == 0) {
+    create_unsignedbr2pp (in1_size, in2_size, pp_matrix,
+			pp_dim1, pp_dim2, verilog);
+    signed_mult = false;
   } else if (pp_encoding.compare ("UB4") == 0) {
     create_unsignedbr4pp (in1_size, in2_size, pp_matrix,
 			  pp_dim1, pp_dim2, verilog);
@@ -516,7 +564,7 @@ int create_four_mult ( int  in_size,
        }
        extra_one_count= extra_one_count/2;
      }
-     cout << "extra_one_count" << extra_one_count << endl;
+     //cout << "extra_one_count" << extra_one_count << endl;
 
   }
 
@@ -592,13 +640,15 @@ int main(int argc, char **argv) {
 
   int  in1_size;
   int  in2_size;
+  int  in3_size;
   int  out_size;
   string final_stage_adder;
   string pp_encoding;
   string tree;
   string main_type;
+  bool signed_mult;
 
-  interact_with_user(argc, argv, in1_size, in2_size, out_size, final_stage_adder,
+  interact_with_user(argc, argv, in1_size, in2_size, in3_size, out_size, signed_mult, final_stage_adder,
 		     pp_encoding, tree, main_type);
 
  

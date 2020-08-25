@@ -17,6 +17,12 @@ void print_pp (string** pp, int m, int n, std::queue<string>& verilog, bool to_f
 
   if (n > 64)
     return;
+
+  if (to_file){
+    verilog.push("");
+    verilog.push("// The values to be summed in the summation tree:");
+
+  }
   
   unsigned long len = 4;
   for (int i=0; i<m; i++){

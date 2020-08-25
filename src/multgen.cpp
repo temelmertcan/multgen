@@ -67,6 +67,7 @@ int interact_with_user (int argc, char **argv,
 
       cout << "1. Stand-alone Multiplier " << endl;
       cout << "2. Merged Four Multipliers " << endl;
+      cout << "3. Fused Multiply-add " << endl;
       //cout << "2.  " << endl;
 
       cout << "Select Multiplier Type: ";
@@ -341,12 +342,12 @@ int create_mult ( int  in1_size,
 
   cout << endl;
   cout << "Multiplier Module (" << module_name << ") is created." << endl;
-  cout << "   Inputs: IN1[" << in1_size << ":0], IN2[" << in2_size << ":0]" << endl;
+  cout << "   Inputs: IN1[" << in1_size-1 << ":0], IN2[" << in2_size-1 << ":0]" << endl;
   if (create_fin_adder){
-    cout << "   Output: result[" << out_size << ":0]" << endl;
+    cout << "   Output: result[" << out_size-1 << ":0]" << endl;
     cout << "   Function: result = IN1 * IN2 " << (signed_mult?"(signed)":"(unsigned)") << endl;
   }else{
-    cout << "   Outputs: result0[" << out_size << ":0], result1[" << out_size << ":0]" << endl;
+    cout << "   Outputs: result0[" << out_size-1 << ":0], result1[" << out_size-1 << ":0]" << endl;
     cout << "   Function: result0+result1 = IN1 * IN2 " << (signed_mult?"(signed)":"(unsigned)") << endl;
   }
   return 0;
@@ -373,8 +374,8 @@ int create_adder (string final_stage_adder,
 
   cout << endl;
   cout << "Adder Module (" << final_stage_adder << "_" << adder_size << ") is created." << endl;
-  cout << "   Inputs: IN1[" << adder_size << ":0], IN2[" << adder_size << ":0]" << endl;
-  cout << "   Output: result[" << (1 + adder_size) << ":0]" << endl;
+  cout << "   Inputs: IN1[" << adder_size-1 << ":0], IN2[" << adder_size-1 << ":0]" << endl;
+  cout << "   Output: result[" <<adder_size << ":0]" << endl;
   cout << "   Function: result=IN1+IN2" << endl;
 
   return 0;
@@ -419,56 +420,36 @@ int create_four_mult ( int  in_size,
   if (retval!=0)
     return retval;
 
-  module_name = "Merged_" + tree + "_" + pp_encoding + "_"
-     + final_stage_adder + "_"
+
+
+  
+
+  string FourMultMerger_module_name = "FourMultMerger_"
+    + std::string(signed_mult ? "Signed_" : "Unsigned_")
     + to_string(in1_size) + "x"
     + to_string(in2_size)
-     + (out_size != (in2_size+in1_size) ? "_" + to_string(out_size) : "" );
+    + (out_size != (in2_size+in1_size) ? "_" + to_string(out_size) : "" );
 
-  verilog.push ("module " + module_name + "(");
+  verilog.push ("module " + FourMultMerger_module_name + "(");
   verilog.push("indent");
   verilog.push("indent");
-  verilog.push ("input logic [" + to_string(in1_size - 1) + ":0] IN1," );
-  verilog.push ("input logic [" + to_string(in2_size - 1) + ":0] IN2," );
+  verilog.push ("input logic [" + to_string(one_mult_out_size-1) + ":0] m1_0,");
+  verilog.push ("input logic [" + to_string(one_mult_out_size-1) + ":0] m1_1,");
+  verilog.push ("input logic [" + to_string(one_mult_out_size-1) + ":0] m2_0,");
+  verilog.push ("input logic [" + to_string(one_mult_out_size-1) + ":0] m2_1,");
+  verilog.push ("input logic [" + to_string(one_mult_out_size-1) + ":0] m3_0,");
+  verilog.push ("input logic [" + to_string(one_mult_out_size-1) + ":0] m3_1,");
+  verilog.push ("input logic [" + to_string(one_mult_out_size-1) + ":0] m4_0,");
+  verilog.push ("input logic [" + to_string(one_mult_out_size-1) + ":0] m4_1,");
   verilog.push ("output logic [" + to_string(out_size - 1) + ":0] result);" );
   verilog.push("outdent");
-
-  verilog.push ("wire logic [" + to_string(one_mult_out_size-1) + ":0] m1_0;");
-  verilog.push ("wire logic [" + to_string(one_mult_out_size-1) + ":0] m1_1;");
-  verilog.push ("wire logic [" + to_string(one_mult_out_size-1) + ":0] m2_0;");
-  verilog.push ("wire logic [" + to_string(one_mult_out_size-1) + ":0] m2_1;");
-  verilog.push ("wire logic [" + to_string(one_mult_out_size-1) + ":0] m3_0;");
-  verilog.push ("wire logic [" + to_string(one_mult_out_size-1) + ":0] m3_1;");
-  verilog.push ("wire logic [" + to_string(one_mult_out_size-1) + ":0] m4_0;");
-  verilog.push ("wire logic [" + to_string(one_mult_out_size-1) + ":0] m4_1;");
-
 
   string** pp_matrix;
   int pp_dim1 = 0, pp_dim2 = 0;
   
 
   if (!signed_mult){
-    verilog.push("");
-    verilog.push
-      (one_mult_module_name + " m1 (IN1["+to_string (one_mult_in_size-1)+":0], " +
-       "IN2["+to_string (one_mult_in_size-1)+":0], m1_0, m1_1);");
     
-    verilog.push
-      (one_mult_module_name + " m2 (IN1["+to_string (one_mult_in_size-1)+":0], " +
-       "IN2["+to_string (one_mult_in_size+one_mult_in_size-1)+":"+
-       to_string(one_mult_in_size)+"], m2_0, m2_1);");
-
-     verilog.push
-      (one_mult_module_name + " m3 (IN1["+to_string (one_mult_in_size+one_mult_in_size-1)+":"+
-       to_string(one_mult_in_size)+"], " +
-       "IN2["+to_string (one_mult_in_size-1)+":0], m3_0, m3_1);");
-
-     verilog.push
-      (one_mult_module_name + " m4 (IN1["+to_string (one_mult_in_size+one_mult_in_size-1)+":"+
-       to_string(one_mult_in_size)+"], " +
-       "IN2["+to_string (one_mult_in_size+one_mult_in_size-1)+":"+
-       to_string(one_mult_in_size)+"], m4_0, m4_1);");
-     verilog.push("");
      pp_dim1 = 8;
      pp_dim2 = out_size;
      pp_matrix = new string*[pp_dim1];
@@ -495,32 +476,7 @@ int create_four_mult ( int  in_size,
     
     
   } else {
-    verilog.push("");
-    verilog.push
-      (one_mult_module_name + " m1 ({1'b0, IN1["+to_string (one_mult_in_size-2)+":0]}, " +
-       "{1'b0, IN2["+to_string (one_mult_in_size-2)+":0]}, m1_0, m1_1);");
-    
-    verilog.push
-      (one_mult_module_name + " m2 ({1'b0, IN1["+to_string (one_mult_in_size-2)+":0]}, " +
-       "{IN2["+to_string (one_mult_in_size+one_mult_in_size-3)+"], "+
-       "IN2["+to_string (one_mult_in_size+one_mult_in_size-3)+":"+
-       to_string(one_mult_in_size-1)+"]}, m2_0, m2_1);");
-
-     verilog.push
-      (one_mult_module_name + " m3 ({IN1["+to_string (one_mult_in_size+one_mult_in_size-3)+"], "+
-       "IN1["+to_string (one_mult_in_size+one_mult_in_size-3)+":"+
-       to_string(one_mult_in_size-1)+"]}, " +
-       "{1'b0, IN2["+to_string (one_mult_in_size-2)+":0]}, m3_0, m3_1);");
-
-     verilog.push
-      (one_mult_module_name + " m4 ({IN1["+to_string (one_mult_in_size+one_mult_in_size-3)+"],"
-       +"IN1["+to_string (one_mult_in_size+one_mult_in_size-3)+":"+
-       to_string(one_mult_in_size-1)+"]}, " +
-       "{IN2["+to_string (one_mult_in_size+one_mult_in_size-3)+"], "
-       +"IN2["+to_string (one_mult_in_size+one_mult_in_size-3)+":"+
-       to_string(one_mult_in_size-1)+"]}, m4_0, m4_1);");
-
-     verilog.push("");
+   
      
      verilog.push ( "wire logic const1;");
      verilog.push ( "assign const_1 = 1'b1;");
@@ -571,8 +527,17 @@ int create_four_mult ( int  in_size,
 
   print_pp(pp_matrix, pp_dim1, pp_dim2, verilog, true);
 
-
-   create_daddatree (pp_matrix,
+  if (tree.compare("WT") == 0)
+    create_wallacetree (pp_matrix,
+			final_stage_adder,
+			pp_dim1,
+			pp_dim2,
+			out_size,
+			true,
+			signed_mult,
+			verilog,
+			adder_size);
+  create_daddatree (pp_matrix,
 		    final_stage_adder,
 		    pp_dim1,
 		    pp_dim2,
@@ -585,17 +550,104 @@ int create_four_mult ( int  in_size,
 
    //print_pp(pp_matrix, pp_dim1, pp_dim2);
 
-   
    verilog.push("outdent");
    verilog.push("");
    verilog.push("endmodule");
+
+
+   
+
+  module_name = "Merged_" + tree + "_" + pp_encoding + "_"
+     + final_stage_adder + "_"
+    + to_string(in1_size) + "x"
+    + to_string(in2_size)
+     + (out_size != (in2_size+in1_size) ? "_" + to_string(out_size) : "" );
+
+  verilog.push ("module " + module_name + "(");
+  verilog.push("indent");
+  verilog.push("indent");
+  verilog.push ("input logic [" + to_string(in1_size - 1) + ":0] IN1," );
+  verilog.push ("input logic [" + to_string(in2_size - 1) + ":0] IN2," );
+  verilog.push ("output logic [" + to_string(out_size - 1) + ":0] result);" );
+  verilog.push("outdent");
+
+  verilog.push ("wire logic [" + to_string(one_mult_out_size-1) + ":0] m1_0;");
+  verilog.push ("wire logic [" + to_string(one_mult_out_size-1) + ":0] m1_1;");
+  verilog.push ("wire logic [" + to_string(one_mult_out_size-1) + ":0] m2_0;");
+  verilog.push ("wire logic [" + to_string(one_mult_out_size-1) + ":0] m2_1;");
+  verilog.push ("wire logic [" + to_string(one_mult_out_size-1) + ":0] m3_0;");
+  verilog.push ("wire logic [" + to_string(one_mult_out_size-1) + ":0] m3_1;");
+  verilog.push ("wire logic [" + to_string(one_mult_out_size-1) + ":0] m4_0;");
+  verilog.push ("wire logic [" + to_string(one_mult_out_size-1) + ":0] m4_1;");
+
+
+  if(!signed_mult){
+
+    verilog.push("");
+    verilog.push
+      (one_mult_module_name + " m1 (IN1["+to_string (one_mult_in_size-1)+":0], " +
+       "IN2["+to_string (one_mult_in_size-1)+":0], m1_0, m1_1);");
+    
+    verilog.push
+      (one_mult_module_name + " m2 (IN1["+to_string (one_mult_in_size-1)+":0], " +
+       "IN2["+to_string (one_mult_in_size+one_mult_in_size-1)+":"+
+       to_string(one_mult_in_size)+"], m2_0, m2_1);");
+
+     verilog.push
+      (one_mult_module_name + " m3 (IN1["+to_string (one_mult_in_size+one_mult_in_size-1)+":"+
+       to_string(one_mult_in_size)+"], " +
+       "IN2["+to_string (one_mult_in_size-1)+":0], m3_0, m3_1);");
+
+     verilog.push
+      (one_mult_module_name + " m4 (IN1["+to_string (one_mult_in_size+one_mult_in_size-1)+":"+
+       to_string(one_mult_in_size)+"], " +
+       "IN2["+to_string (one_mult_in_size+one_mult_in_size-1)+":"+
+       to_string(one_mult_in_size)+"], m4_0, m4_1);");
+     verilog.push("");
+
+  } else {
+     verilog.push("");
+    verilog.push
+      (one_mult_module_name + " m1 ({1'b0, IN1["+to_string (one_mult_in_size-2)+":0]}, " +
+       "{1'b0, IN2["+to_string (one_mult_in_size-2)+":0]}, m1_0, m1_1);");
+    
+    verilog.push
+      (one_mult_module_name + " m2 ({1'b0, IN1["+to_string (one_mult_in_size-2)+":0]}, " +
+       "{IN2["+to_string (one_mult_in_size+one_mult_in_size-3)+"], "+
+       "IN2["+to_string (one_mult_in_size+one_mult_in_size-3)+":"+
+       to_string(one_mult_in_size-1)+"]}, m2_0, m2_1);");
+
+     verilog.push
+      (one_mult_module_name + " m3 ({IN1["+to_string (one_mult_in_size+one_mult_in_size-3)+"], "+
+       "IN1["+to_string (one_mult_in_size+one_mult_in_size-3)+":"+
+       to_string(one_mult_in_size-1)+"]}, " +
+       "{1'b0, IN2["+to_string (one_mult_in_size-2)+":0]}, m3_0, m3_1);");
+
+     verilog.push
+      (one_mult_module_name + " m4 ({IN1["+to_string (one_mult_in_size+one_mult_in_size-3)+"],"
+       +"IN1["+to_string (one_mult_in_size+one_mult_in_size-3)+":"+
+       to_string(one_mult_in_size-1)+"]}, " +
+       "{IN2["+to_string (one_mult_in_size+one_mult_in_size-3)+"], "
+       +"IN2["+to_string (one_mult_in_size+one_mult_in_size-3)+":"+
+       to_string(one_mult_in_size-1)+"]}, m4_0, m4_1);");
+
+     verilog.push("");
+  }
+
+
+  verilog.push
+      (FourMultMerger_module_name + " merger (m1_0, m1_1, m2_0, m2_1, m3_0, m3_1, m4_0, m4_1, result);");
+   
+  verilog.push("outdent");
+  verilog.push("");
+  verilog.push("endmodule");
    
   verilog.push("");
 
   cout << endl;
   cout << "Merged Multiplier Module (" << module_name << ") is created." << endl;
-  cout << "   Inputs: IN1[" << in1_size << ":0], IN2[" << in2_size << ":0]" << endl;
-  cout << "   Output: result[" << out_size << ":0]" << endl;
+  cout << "   Inputs: IN1[" << in1_size-1 << ":0], IN2[" << in2_size-1 << ":0]" << endl;
+  cout << "   Output: result[" << out_size-1 << ":0]" << endl;
   cout << "   Function: result = IN1 * IN2 " << (signed_mult?"(signed)":"(unsigned)") << endl;
 
   
@@ -605,6 +657,199 @@ int create_four_mult ( int  in_size,
   
 }
 
+
+
+
+int create_fma ( int  in1_size,
+		 int  in2_size,
+		 int  in3_size,
+		 int  out_size,
+		 string final_stage_adder,
+		 string pp_encoding,
+		 string tree,
+		 string& module_name,
+		 queue<string>& verilog,
+		 int& adder_size){
+
+  bool signed_mult =
+    (pp_encoding.compare ("SSP") == 0) ||
+    (pp_encoding.compare ("SB4") == 0) ||
+    (pp_encoding.compare ("SB2") == 0);
+
+
+
+  string mult_module_name;
+  int to_be_ignored;
+
+  int mult_out_size = min(out_size, in1_size+in2_size);
+  
+  int retval = create_mult (in1_size,
+			    in2_size,
+			    mult_out_size,
+			    "",
+			    pp_encoding,
+			    tree,
+			    false,
+			    mult_module_name,
+			    verilog,
+			    to_be_ignored);
+
+  if (retval!=0)
+    return retval;
+  
+
+  string FMA_Merger_module_name = "FMA_Merger_"
+    + std::string(signed_mult ? "Signed_" : "Unsigned_")
+    + to_string(in1_size) + "x"
+    + to_string(in2_size)
+    + (out_size != (in2_size+in1_size) ? "_" + to_string(out_size) : "" );
+
+  verilog.push ("module " + FMA_Merger_module_name + "(");
+  verilog.push("indent");
+  verilog.push("indent");
+  verilog.push ("input logic [" + to_string(mult_out_size-1) + ":0] m1_0,");
+  verilog.push ("input logic [" + to_string(mult_out_size-1) + ":0] m1_1,");
+  verilog.push ("input logic [" + to_string(in3_size-1) + ":0] IN3,");
+  verilog.push ("output logic [" + to_string(out_size - 1) + ":0] result);" );
+  verilog.push("outdent");
+
+  string** pp_matrix;
+  int pp_dim1 = 0, pp_dim2 = 0;
+  
+
+  if (!signed_mult){
+    
+     pp_dim1 = 3;
+     pp_dim2 = out_size;
+     pp_matrix = new string*[pp_dim1];
+     for (int i = 0; i < pp_dim1; i++)
+       pp_matrix[i] = new string[pp_dim2];
+     
+     for (int i = 0;  i < pp_dim2; i++){
+       if (i<mult_out_size){
+	 pp_matrix[0][i] = "m1_0[" + to_string(i) + "]";
+	 pp_matrix[1][i] = "m1_1[" + to_string(i) + "]";
+       }
+       if (i < in3_size ){
+	 pp_matrix[2][i] = "IN3[" + to_string(i) + "]";
+       }
+     }
+  } else {
+     verilog.push ( "wire logic const1;");
+     verilog.push ( "assign const_1 = 1'b1;");
+     
+     pp_dim1 = 4;
+     pp_dim2 = out_size;
+     pp_matrix = new string*[pp_dim1];
+     for (int i = 0; i < pp_dim1; i++)
+       pp_matrix[i] = new string[pp_dim2];
+
+     int extra_one_count = 0;
+     for (int i = 0;  i < pp_dim2; i++){
+       
+       if (i < mult_out_size){
+     	 pp_matrix[0][i] = "m1_0[" + to_string(i) + "]";
+     	 pp_matrix[1][i] = "m1_1[" + to_string(i) + "]";
+       } else if (i==mult_out_size)
+     	 extra_one_count ++;
+       if (i < in3_size-1){
+     	 pp_matrix[2][i] = "IN3[" + to_string(i) + "]";
+       } else if (i==in3_size-1){
+	 pp_matrix[2][i] = "~IN3[" + to_string(i) + "]";
+     	 extra_one_count ++;
+       }
+       
+       if ((extra_one_count&1)==1){
+     	 pp_matrix[3][i] = "const_1";
+     	 extra_one_count++;
+       }
+       extra_one_count= extra_one_count/2;
+     }
+     //cout << "extra_one_count" << extra_one_count << endl;
+
+  }
+
+
+  print_pp(pp_matrix, pp_dim1, pp_dim2, verilog, true);
+
+  if (tree.compare("WT") == 0)
+    create_wallacetree (pp_matrix,
+			final_stage_adder,
+			pp_dim1,
+			pp_dim2,
+			out_size,
+			true,
+			signed_mult,
+			verilog,
+			adder_size);
+  else
+    create_daddatree (pp_matrix,
+		      final_stage_adder,
+		      pp_dim1,
+		      pp_dim2,
+		      out_size,
+		      true,
+		      signed_mult,
+		      verilog,
+		      adder_size);
+  
+
+   //print_pp(pp_matrix, pp_dim1, pp_dim2);
+
+   verilog.push("outdent");
+   verilog.push("");
+   verilog.push("endmodule");
+
+   verilog.push("");
+
+
+   
+
+   module_name = "FMA_" + tree + "_" + pp_encoding + "_"
+     + final_stage_adder + "_"
+     + to_string(in1_size) + "x"
+     + to_string(in2_size) + "_plus_"
+     + to_string(in3_size)
+     + (out_size != max(in2_size+in1_size+1, in3_size+1) ? "_" + to_string(out_size) : "" );
+   
+   verilog.push ("module " + module_name + "(");
+   verilog.push("indent");
+   verilog.push("indent");
+   verilog.push("input logic [" + to_string(in1_size - 1) + ":0] IN1," );
+   verilog.push("input logic [" + to_string(in2_size - 1) + ":0] IN2," );
+   verilog.push("input logic [" + to_string(in3_size - 1) + ":0] IN3," );
+   verilog.push("output logic [" + to_string(out_size - 1) + ":0] result);" );
+   verilog.push("outdent");
+   
+   verilog.push ("wire logic [" + to_string(mult_out_size-1) + ":0] m1_0;");
+   verilog.push ("wire logic [" + to_string(mult_out_size-1) + ":0] m1_1;");
+   
+   
+   
+   verilog.push
+     (mult_module_name + " m1 (IN1["+to_string (in1_size-1)+":0], " +
+      "IN2["+to_string (in2_size-1)+":0], m1_0, m1_1);");
+   
+   verilog.push("");
+   
+   
+   verilog.push (FMA_Merger_module_name + " merger (m1_0, m1_1, IN3, result);");
+   
+   verilog.push("outdent");
+   verilog.push("");
+   verilog.push("endmodule");
+   
+   verilog.push("");
+   
+   cout << endl;
+   cout << "Fused Multiply-add Module (" << module_name << ") is created." << endl;
+   cout << "   Inputs: IN1[" << in1_size-1 << ":0], IN2[" << in2_size-1 << ":0], IN3[" << in3_size-1 << ":0]" << endl;
+   cout << "   Output: result[" << out_size-1 << ":0]" << endl;
+   cout << "   Function: result = IN1 * IN2 + IN3 " << (signed_mult?"(signed)":"(unsigned)") << endl;
+   
+   return 0;
+   
+}
 
 
 void write_to_file (string file_name,
@@ -683,7 +928,19 @@ int main(int argc, char **argv) {
 		      verilog,
 		      adder_size);
 
-  }
+  } else if (main_type.compare("FMA") == 0){
+    create_fma (in1_size,
+		in2_size,
+		in3_size,
+		out_size,
+		final_stage_adder,
+		pp_encoding,
+		tree,
+		module_name,
+		verilog,
+		adder_size);
+  } else
+    cout << "not implemented yet!" << endl;
   
 
   if (create_fin_adder){

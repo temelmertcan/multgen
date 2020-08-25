@@ -42,6 +42,8 @@
 #include <string>
 #include <sstream>
 
+#include <cmath>
+
 using namespace std;
 
 #include "adders.h"
@@ -71,6 +73,7 @@ int interact_with_user (int argc, char **argv,
 			int& in1_size,
 			int& in2_size,
 			int& in3_size,
+			int& dot_size,
 			int& out_size,
 			bool& signed_mult,
 			string& final_stage_adder,
@@ -103,6 +106,7 @@ int interact_with_user (int argc, char **argv,
       cout << "1. Stand-alone Multiplier " << endl;
       cout << "2. Merged Four Multipliers " << endl;
       cout << "3. Fused Multiply-add " << endl;
+      cout << "4. Dot Product " << endl;
       //cout << "2.  " << endl;
 
       cout << "Select Multiplier Type: ";
@@ -115,6 +119,9 @@ int interact_with_user (int argc, char **argv,
 	break;
       }else if (s.compare ("3") == 0)  {
 	main_type = "FMA";
+	break;
+      }else if (s.compare ("4") == 0)  {
+	main_type = "DOT";
 	break;
       } else
 	cout << "Invalid Selection!" << endl;
@@ -238,7 +245,7 @@ int interact_with_user (int argc, char **argv,
       cout << "Enter IN2 (Multiplicand) size: ";
       cin >> in2_size;
 
-      cout << "Enter IN3 size: ";
+      cout << "Enter IN3 (number to be added) size: ";
       cin >> in3_size;
 
       cout << "Enter Output size (any value less than \""
@@ -264,6 +271,37 @@ int interact_with_user (int argc, char **argv,
 	  break;
 	cout << "Input size must be divisible by 2. ";
       }
+    }
+
+    if (main_type.compare("DOT") == 0){
+      cout << "Enter IN1_i (Multiplier) size: ";
+      cin >> in1_size;
+
+      cout << "Enter IN2_i (Multiplicand) size: ";
+      cin >> in2_size;
+
+      cout << "Enter dot product size: ";
+      cin >> dot_size;
+
+      if(dot_size<1) {
+	cout << "Dot product size should be a positive number." << endl;
+	return 1;
+      }
+
+      cout << "Enter IN3 (number to be added) size (enter 0 to omit): ";
+      cin >> in3_size;
+
+      cout << "Enter Output size (any value less than \""
+	   << max(in1_size+in2_size+int((dot_size+1)/2)+(in3_size>0&&(dot_size&1)==0?1:0),in3_size+1)
+	   << "\" will truncate the result): ";
+      string in = "";
+      cin >> in;
+      if (std::stringstream(in) >> out_size) {
+      }
+      else out_size = max(in1_size+in2_size+int((dot_size+1)/2)+(in3_size>0&&(dot_size&1)==0?1:0),in3_size+1);
+
+      if (out_size > max(in1_size+in2_size+int((dot_size+1)/2)+(in3_size>0&&(dot_size&1)==0?1:0),in3_size+1))
+	out_size = max(in1_size+in2_size+int((dot_size+1)/2)+(in3_size>0&&(dot_size&1)==0?1:0),in3_size+1);
     }
     
   } else {
@@ -736,8 +774,9 @@ int create_fma ( int  in1_size,
   string FMA_Merger_module_name = "FMA_Merger_"
     + std::string(signed_mult ? "Signed_" : "Unsigned_")
     + to_string(in1_size) + "x"
-    + to_string(in2_size)
-    + (out_size != (in2_size+in1_size) ? "_" + to_string(out_size) : "" );
+    + to_string(in2_size) + "_"
+    + to_string(in3_size)
+    + (out_size != max(in1_size+in2_size+1,in3_size+1) ? "_" + to_string(out_size) : "" );
 
   verilog.push ("module " + FMA_Merger_module_name + "(");
   verilog.push("indent");
@@ -887,6 +926,232 @@ int create_fma ( int  in1_size,
 }
 
 
+int create_dot ( int  in1_size,
+		 int  in2_size,
+		 int  in3_size,
+		 int  dot_size,
+		 int  out_size,
+		 string final_stage_adder,
+		 string pp_encoding,
+		 string tree,
+		 string& module_name,
+		 queue<string>& verilog,
+		 int& adder_size){
+
+  bool signed_mult =
+    (pp_encoding.compare ("SSP") == 0) ||
+    (pp_encoding.compare ("SB4") == 0) ||
+    (pp_encoding.compare ("SB2") == 0);
+
+
+
+  string mult_module_name;
+  int to_be_ignored;
+
+  int mult_out_size = min(out_size, in1_size+in2_size);
+  
+  int retval = create_mult (in1_size,
+			    in2_size,
+			    mult_out_size,
+			    "",
+			    pp_encoding,
+			    tree,
+			    false,
+			    mult_module_name,
+			    verilog,
+			    to_be_ignored);
+
+  if (retval!=0)
+    return retval;
+  
+
+  string DOT_Merger_module_name = "DOT_Merger_"
+    + std::string(signed_mult ? "Signed_" : "Unsigned_")
+    + to_string(dot_size) + "_"
+    + to_string(in1_size) + "x"
+    + to_string(in2_size)
+    + (in3_size>0 ? "_" + to_string(in3_size) : "")
+    + (out_size != max(in1_size+in2_size+int((dot_size+1)/2)+(in3_size>0&&(dot_size&1)==0?1:0),in3_size+1)
+       ? "_" + to_string(out_size) : "" );
+
+  verilog.push ("module " + DOT_Merger_module_name + "(");
+  verilog.push("indent");
+  verilog.push("indent");
+  for (int i = 0; i < dot_size; i++){
+    string m = "m" + to_string(i);
+    verilog.push ("input logic [" + to_string(mult_out_size-1) + ":0] "+m+"_0,");
+    verilog.push ("input logic [" + to_string(mult_out_size-1) + ":0] "+m+"_1,");
+  }
+  if (in3_size>0)
+    verilog.push ("input logic [" + to_string(in3_size-1) + ":0] IN3,");
+  verilog.push ("output logic [" + to_string(out_size - 1) + ":0] result);" );
+  verilog.push("outdent");
+
+  string** pp_matrix;
+  int pp_dim1 = 0, pp_dim2 = 0;
+  
+
+  if (!signed_mult){
+    
+     pp_dim1 = 1+2*dot_size;
+     pp_dim2 = out_size;
+     pp_matrix = new string*[pp_dim1];
+     for (int i = 0; i < pp_dim1; i++)
+       pp_matrix[i] = new string[pp_dim2];
+     
+     for (int i = 0;  i < pp_dim2; i++){
+       if (i < in3_size ){
+	 pp_matrix[0][i] = "IN3[" + to_string(i) + "]";
+       }
+       if (i<mult_out_size){
+	 for (int j = 0; j < dot_size; j++){
+	   string m = "m" + to_string(j);
+	   pp_matrix[j*2+1][i] = m + "_0[" + to_string(i) + "]";
+	   pp_matrix[j*2+2][i] = m + "_1[" + to_string(i) + "]";
+	 }
+       }
+     }
+  } else {
+     verilog.push ( "wire logic const1;");
+     verilog.push ( "assign const_1 = 1'b1;");
+     
+     pp_dim1 = 2+2*dot_size;;
+     pp_dim2 = out_size;
+     pp_matrix = new string*[pp_dim1];
+     for (int i = 0; i < pp_dim1; i++)
+       pp_matrix[i] = new string[pp_dim2];
+
+     int extra_one_count = 0;
+     for (int i = 0;  i < pp_dim2; i++){
+       
+       if (i < mult_out_size){
+	 for (int j = 0; j < dot_size; j++){
+	   string m = "m" + to_string(j);
+	   pp_matrix[j*2+2][i] = m + "_0[" + to_string(i) + "]";
+	   pp_matrix[j*2+3][i] = m + "_1[" + to_string(i) + "]";
+	 }
+       } else if (i==mult_out_size)
+     	 extra_one_count += dot_size;
+       if (i < in3_size-1){
+     	 pp_matrix[0][i] = "IN3[" + to_string(i) + "]";
+       } else if (i==in3_size-1){
+	 pp_matrix[0][i] = "~IN3[" + to_string(i) + "]";
+     	 extra_one_count ++;
+       }
+       
+       if ((extra_one_count&1)==1){
+     	 pp_matrix[1][i] = "const_1";
+     	 extra_one_count++;
+       }
+       extra_one_count= extra_one_count/2;
+     }
+     //cout << "extra_one_count" << extra_one_count << endl;
+
+  }
+
+
+  print_pp(pp_matrix, pp_dim1, pp_dim2, verilog, true);
+
+  if (tree.compare("WT") == 0)
+    create_wallacetree (pp_matrix,
+			final_stage_adder,
+			pp_dim1,
+			pp_dim2,
+			out_size,
+			true,
+			signed_mult,
+			verilog,
+			adder_size);
+  else
+    create_daddatree (pp_matrix,
+		      final_stage_adder,
+		      pp_dim1,
+		      pp_dim2,
+		      out_size,
+		      true,
+		      signed_mult,
+		      verilog,
+		      adder_size);
+  
+
+   //print_pp(pp_matrix, pp_dim1, pp_dim2);
+
+   verilog.push("outdent");
+   verilog.push("");
+   verilog.push("endmodule");
+
+   verilog.push("");
+
+
+   
+
+   module_name = "DOT_Product_" + tree + "_" + pp_encoding + "_"
+     + final_stage_adder + "_"
+     + to_string(dot_size) + "_"
+     + to_string(in1_size) + "x"
+     + to_string(in2_size)
+     + (in3_size>0 ? "_plus_" + to_string(in3_size) : "")
+     + (out_size != max(in1_size+in2_size+int((dot_size+1)/2)+(in3_size>0&&(dot_size&1)==0?1:0),in3_size+1)
+	? "_" + to_string(out_size) : "" );
+   
+   verilog.push ("module " + module_name + "(");
+   verilog.push("indent");
+   verilog.push("indent");
+   for (int i = 0; i < dot_size; i++){
+     verilog.push("input logic [" + to_string(in1_size - 1) + ":0] IN1_"+to_string(i)+"," );
+     verilog.push("input logic [" + to_string(in2_size - 1) + ":0] IN2_"+to_string(i)+"," );
+   }
+
+   if (in3_size>0)
+     verilog.push("input logic [" + to_string(in3_size - 1) + ":0] IN3," );
+   verilog.push("output logic [" + to_string(out_size - 1) + ":0] result);" );
+   verilog.push("outdent");
+
+
+   verilog.push("");
+   
+   for (int j = 0; j < dot_size; j++){
+     string m = "m" + to_string(j);
+     verilog.push ("wire logic [" + to_string(mult_out_size-1) + ":0] "+m+"_0;");
+     verilog.push ("wire logic [" + to_string(mult_out_size-1) + ":0] "+m+"_1;");
+   }
+
+   verilog.push("");
+
+   for (int j = 0; j < dot_size; j++){
+     string m = "m" + to_string(j);
+     verilog.push
+       (mult_module_name + " "+m+" (IN1_"+to_string(j)+"["+to_string (in1_size-1)+":0], " +
+	"IN2_"+to_string(j)+"["+to_string (in2_size-1)+":0], "+m+"_0, "+m+"_1);");
+   }
+   
+   verilog.push("");
+   
+
+   string ms = "";
+   for (int j = 0; j < dot_size; j++)
+     ms +=  "m" + to_string(j) + "_0, " + "m" + to_string(j) + "_1, "; 
+   verilog.push (DOT_Merger_module_name + " merger ("+ms+(in3_size>0?" IN3,":"")+" result);");
+   
+   verilog.push("outdent");
+   verilog.push("");
+   verilog.push("endmodule");
+   
+   verilog.push("");
+   
+   cout << endl;
+   cout << "Dot Product Module (" << module_name << ") is created." << endl;
+   cout << "   Inputs: IN1_i[" << in1_size-1 << ":0], IN2_i[" << in2_size-1 << ":0] (i from 0 to "+to_string(dot_size-1)+")" <<
+     (in3_size>0?+", IN3[" + to_string(in3_size-1) +  ":0]" :"")  << endl;
+   cout << "   Output: result[" << out_size-1 << ":0]" << endl;
+   cout << "   Function: result = IN1_0 * IN2_0 + ... + IN1_"+to_string(dot_size-1)+" * IN2_"+to_string(dot_size-1)+
+     " + IN3 " << (signed_mult?"(signed)":"(unsigned)") << endl;
+   
+   return 0;
+   
+}
+
+
 void write_to_file (string file_name,
 		    queue<string>& verilog){
 
@@ -921,6 +1186,7 @@ int main(int argc, char **argv) {
   int  in1_size;
   int  in2_size;
   int  in3_size;
+  int  dot_size;
   int  out_size;
   string final_stage_adder;
   string pp_encoding;
@@ -928,7 +1194,7 @@ int main(int argc, char **argv) {
   string main_type;
   bool signed_mult;
 
-  interact_with_user(argc, argv, in1_size, in2_size, in3_size, out_size, signed_mult, final_stage_adder,
+  interact_with_user(argc, argv, in1_size, in2_size, in3_size, dot_size, out_size, signed_mult, final_stage_adder,
 		     pp_encoding, tree, main_type);
 
  
@@ -967,6 +1233,18 @@ int main(int argc, char **argv) {
     create_fma (in1_size,
 		in2_size,
 		in3_size,
+		out_size,
+		final_stage_adder,
+		pp_encoding,
+		tree,
+		module_name,
+		verilog,
+		adder_size);
+  } else if (main_type.compare("DOT") == 0){
+    create_dot (in1_size,
+		in2_size,
+		in3_size,
+		dot_size,
 		out_size,
 		final_stage_adder,
 		pp_encoding,

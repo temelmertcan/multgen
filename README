@@ -1,14 +1,18 @@
-An efficient integer multiplier generator. This version can generate these multipliers:
+An efficient integer multiplier generator. This program can generate these multipliers:
+- Stand-alone (a simple multiplier with partial product generation, summation tree and a final stage adder)
+- Merged Multipliers (merges four smaller stand-alone multipliers to attain the same functionality)
+- Fused Multiply-add
+- Dot Multiply
+with these summation tree algorithms:
 - Wallace Tree
 - Dadda Tree
-with these partial products:
-- Simple Signed
-- Simple Unsigned
-- Signed Booth radix-4
-- Unsigned Booth radix-4
+with these partial products (signed or unsigned):
+- Simple 
+- Booth radix-2
+- Booth radix-4
 and with these final stage adders:
 - Ladner-Fisher
-- Kogge Stone
+- Kogge-Stone
 - Han-Carlson
 - Ripple-Carry
 
@@ -16,9 +20,12 @@ You can use these generator as follows:
 
 1. make
 2. ./multgen
-3. Follow the instructions to create the integer multiplier of yoru choice!
+3. Follow the instructions to create the integer multiplier of your choice!
 
+Generated multiplier can be verified in ACL2 following the method published in:
+https://link.springer.com/chapter/10.1007/978-3-030-53288-8_23
 
 Mertcan Temel
 Electrical and Computer Engineering
 University of Texas at Austin
+

@@ -1,3 +1,38 @@
+// Note: The license below is based on the template at:
+// http://opensource.org/licenses/BSD-3-Clause
+
+// Copyright (C) 2020 Regents of the University of Texas
+//All rights reserved.
+
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+
+// o Redistributions of source code must retain the above copyright
+//   notice, this list of conditions and the following disclaimer.
+
+// o Redistributions in binary form must reproduce the above copyright
+//   notice, this list of conditions and the following disclaimer in the
+//   documentation and/or other materials provided with the distribution.
+
+// o Neither the name of the copyright holders nor the names of its
+//   contributors may be used to endorse or promote products derived
+//   from this software without specific prior written permission.
+
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+// Original Author(s):
+// Mertcan Temel         <mert@utexas.edu>
 
 
 
@@ -12,16 +47,43 @@ using namespace std;
 
 #include "pp_gen.h"
 
-void print_pp (string** pp, int m, int n){
+void print_pp (string** pp, int m, int n, std::queue<string>& verilog, bool to_file){
 
+
+  if (n > 64)
+    return;
+
+  if (to_file){
+    verilog.push("");
+    verilog.push("// The values to be summed in the summation tree:");
+
+  }
+  
+  unsigned long len = 4;
   for (int i=0; i<m; i++){
     for (int j=0; j<n; j++){
-      if (pp[i][j] != "")
-	cout << pp[i][j] << " ";
-      else
-	cout << "   -   ";
+      len = max (pp[i][j].size(), len);
     }
-  cout << endl;
+  }
+  len++;
+
+  for (int i=0; i<m; i++){
+    string line = (to_file ? " // " : "");
+    for (int j=0; j<n; j++){
+      if (pp[i][j] != ""){
+	line += pp[i][j];
+	
+	for (int k = pp[i][j].size(); k<len; k++)
+	   line += " ";
+      }
+      else{
+	line += "  --";
+	for (int k = 4; k<len; k++)
+	  line+= " ";
+      }
+    }
+    if (to_file) verilog.push(line);
+    else cout << line << endl;
   }
 
   // cout << "here" << endl;
@@ -64,6 +126,9 @@ void create_unsignedpp (int m, int n,
 		   + "]}} & IN2;");
   }
 
+
+  print_pp(pp_matrix, pp_dim1, pp_dim2, verilog, true);
+  
 }
 
 
@@ -126,10 +191,178 @@ void create_signedpp (int m, int n,
   pp_matrix[m][n] = "const1";
   pp_matrix[m][m+n-1] = "const1";
 
+  print_pp(pp_matrix, pp_dim1, pp_dim2, verilog, true);
+
   //print_pp(pp_matrix, pp_dim1, pp_dim2);
   
 }
 
+void create_unsignedbr2pp (int m, int n,
+			   string**& pp_matrix,
+			   int& pp_dim1,
+			   int& pp_dim2,
+			   std::queue<string>& verilog){
+
+  verilog.push ( "wire logic const1;");
+  verilog.push ( "assign const1 = 1'b1;");
+
+  pp_dim1 = m+3; // number of rows
+  pp_dim2 = (n+m+1); // number of columns
+
+  pp_matrix = new string*[pp_dim1];
+
+  /////
+  verilog.push ("wire [" + to_string(n) + ":0] IN2_1x;");
+  verilog.push ("assign IN2_1x = { 1'b0,  IN2};");
+  /////
+  
+  for (int i = 0; i < m+1; i++){
+    verilog.push ("");
+    verilog.push ("// Signed Booth Radix-2 Partial Products Row " + to_string(i+1));
+    string m0 = (i == 0 ? "1'b0" : "IN1[" + to_string(i - 1) + "]");
+    string m1 = (i==m?"1'b0":"IN1[" + to_string(i) + "]");
+
+
+    string select_e = "select_e_" + to_string(i);
+    string select_ne = "select_ne_" + to_string(i);
+  
+    string cmp = "t_comp" + to_string(i);
+      
+    verilog.push ( "wire logic " + select_e
+		   + ", " + select_ne
+		   + ", " + cmp
+		   + ";");
+
+    verilog.push ("assign " + select_e +
+		  " = (~ " + m1 + ") & (" + m0 + ");");
+    
+    verilog.push ("assign " + select_ne +
+		  " = ( " + m1 + ") & (~ " + m0 + ");");
+
+    string cur_pp = "pp_" + to_string(i);
+    verilog.push ("wire ["+ to_string(n+1) +":0] " + cur_pp + ";");
+    verilog.push ("assign " + cur_pp + " = (1<<" +
+		  to_string(n) +
+    		    ") ^ (" +
+		 "("+ select_e  + " ? IN2_1x : 0) | " + 
+		"(" +  select_ne + " ? (~ IN2_1x) : 0)" +
+    		    ");");
+    verilog.push ("assign " + cmp + " = " + select_ne  + ";");
+    
+  }
+
+
+  for (int i = 0; i < pp_dim1-2; i++){
+    pp_matrix[i] = new string[pp_dim2];
+    for (int j = 0; j < i; j++){
+      pp_matrix[i][j] = "";
+    }
+    for (int j = 0; j < n+1 && j+i < pp_dim2 ; j++){
+      string cur;
+      cur = "pp_" + to_string(i) + "[" + to_string(j) + "]";
+      pp_matrix[i][j+i] = cur;
+    }
+  }
+
+  // add tcomps for the extra 1 needed for twos complemented partial products
+  pp_matrix[pp_dim1-2] = new string[pp_dim2];
+  for (int j = 0; j < m; j+=1){
+    pp_matrix[pp_dim1-2][j] = "t_comp"  + to_string(j);
+  }
+  
+  // for sign extension trick, add const1 to msb of the first pp
+  pp_matrix[pp_dim1-1] = new string[pp_dim2];
+  pp_matrix[pp_dim1-1][n] = "const1";
+  
+  print_pp(pp_matrix, pp_dim1, pp_dim2, verilog, true);
+   
+}
+
+
+void create_signedbr2pp (int m, int n,
+			string**& pp_matrix,
+			int& pp_dim1,
+			int& pp_dim2,
+			std::queue<string>& verilog){
+
+  verilog.push ( "wire logic const1;");
+  verilog.push ( "assign const1 = 1'b1;");
+
+  pp_dim1 = m+2; // number of rows
+  pp_dim2 = (n+m); // number of columns
+
+  pp_matrix = new string*[pp_dim1];
+
+  /////
+  verilog.push ("wire [" + to_string(n) + ":0] IN2_1x;");
+  verilog.push ("assign IN2_1x = { IN2["+ to_string(n-1) +"],  IN2};");
+  /////
+  
+  for (int i = 0; i < m; i++){
+    verilog.push ("");
+    verilog.push ("// Signed Booth Radix-2 Partial Products Row " + to_string(i+1));
+    string m0 = (i == 0 ? "1'b0" : "IN1[" + to_string(i - 1) + "]");
+    string m1 = "IN1[" + to_string(i) + "]";
+
+
+    string select_e = "select_e_" + to_string(i);
+    string select_ne = "select_ne_" + to_string(i);
+  
+    string cmp = "t_comp" + to_string(i);
+      
+    verilog.push ( "wire logic " + select_e
+		   + ", " + select_ne
+		   // + ", " + select_2x
+		   + ", " + cmp
+		   //+ ", " + select_n2x
+		   + ";");
+
+    verilog.push ("assign " + select_e +
+		  " = (~ " + m1 + ") & (" + m0 + ");");// +
+		  //" | ((~ " + m2 + ") & (~ " + m0 + ") & " + m1 + ");");
+
+    
+    verilog.push ("assign " + select_ne +
+		  " = ( " + m1 + ") & (~ " + m0 + ");");// +
+
+    string cur_pp = "pp_" + to_string(i);
+    verilog.push ("wire ["+ to_string(n+1) +":0] " + cur_pp + ";");
+    verilog.push ("assign " + cur_pp + " = (1<<" +
+		  to_string(n) +
+    		    ") ^ (" +
+		 "("+ select_e  + " ? IN2_1x : 0) | " + 
+		"(" +  select_ne + " ? (~ IN2_1x) : 0)" +
+    		    ");");
+    verilog.push ("assign " + cmp + " = " + select_ne  + ";");
+    
+  }
+
+
+  for (int i = 0; i < pp_dim1-2; i++){
+    pp_matrix[i] = new string[pp_dim2];
+    for (int j = 0; j < i; j++){
+      pp_matrix[i][j] = "";
+    }
+    for (int j = 0; j < n+1 && j+i < pp_dim2 ; j++){
+      string cur;
+      cur = "pp_" + to_string(i) + "[" + to_string(j) + "]";
+      pp_matrix[i][j+i] = cur;
+    }
+  }
+
+  // add tcomps for the extra 1 needed for twos complemented partial products
+  pp_matrix[pp_dim1-2] = new string[pp_dim2];
+  for (int j = 0; j < m; j+=1){
+    pp_matrix[pp_dim1-2][j] = "t_comp"  + to_string(j);
+  }
+  
+  // for sign extension trick, add const1 to msb of the first pp
+  pp_matrix[pp_dim1-1] = new string[pp_dim2];
+  pp_matrix[pp_dim1-1][n] = "const1";
+  
+  print_pp(pp_matrix, pp_dim1, pp_dim2, verilog, true);
+   
+}
 
 
 void create_signedbr4pp (int m, int n,
@@ -185,6 +418,13 @@ void create_signedbr4pp (int m, int n,
   // string twox_upper = "( twoxIN2[" + to_string(n+1) + "])";
   // string n2x_upper = "( n2xIN2[" + to_string(n+1) +  "])";
 
+  /////
+  verilog.push ("wire [" + to_string(n+1) + ":0] IN2_1x;");
+  verilog.push ("wire [" + to_string(n+1) + ":0] IN2_2x;");
+  verilog.push ("assign IN2_1x = {IN2["+ to_string(n-1) +"],  IN2["+ to_string(n-1) +"],  IN2};");
+  verilog.push ("assign IN2_2x = {IN2["+ to_string(n-1) +"],  IN2, 1'b0};");
+  /////
+  
   for (int i = 0; i < (m+1)/2; i++){
     verilog.push ("");
     verilog.push ("// Signed Booth Radix-4 Partial Products Row " + to_string(i+1));
@@ -221,26 +461,39 @@ void create_signedbr4pp (int m, int n,
     verilog.push ("assign " + select_n2x +
 		  " = " + m2 + " & (~ " + m1 + ") & (~ " + m0 + ");"); 
 
-    for (int j = 0; j < n+2; j++){
-      string cur_pp = "pp_" + to_string(i) + "_" + to_string(j);
+    //////
+    string cur_pp = "pp_" + to_string(i);
+    verilog.push ("wire ["+ to_string(n+1) +":0] " + cur_pp + ";");
+    verilog.push ("assign " + cur_pp + " = (1<<" +
+		  to_string(n+1) +
+    		    ") ^ (" +
+		 "("+ select_e  + " ? IN2_1x : 0) | " + 
+		"(" +  select_2x + " ? IN2_2x : 0) | " +
+		"(" +  select_n2x+ " ? (~ IN2_2x) : 0) | " +
+		"(" +  select_ne + " ? (~ IN2_1x) : 0)" +
+    		    ");");
+    ////////
+    
+    // for (int j = 0; j < n+2; j++){
+    //   string cur_pp = "pp_" + to_string(i) + "_" + to_string(j);
       
-      string e_lower = "IN2[" + to_string(min(j,n-1)) + "]";
-      string ne_lower = "(~ IN2[" + to_string(min(j,n-1)) + "])";
-      string twox_lower = (j==0 ? "1'b0" : "IN2[" + to_string(min(j-1,n-1)) + "]");
-      string n2x_lower = (j==0 ? "1'b1" : "(~ IN2[" + to_string(min(j-1,n-1)) + "])");
-	//"n2xIN2[" + to_string(j) + "]";
+    //   string e_lower = "IN2[" + to_string(min(j,n-1)) + "]";
+    //   string ne_lower = "(~ IN2[" + to_string(min(j,n-1)) + "])";
+    //   string twox_lower = (j==0 ? "1'b0" : "IN2[" + to_string(min(j-1,n-1)) + "]");
+    //   string n2x_lower = (j==0 ? "1'b1" : "(~ IN2[" + to_string(min(j-1,n-1)) + "])");
+    // 	//"n2xIN2[" + to_string(j) + "]";
   
-      verilog.push ("wire logic " + cur_pp + ";");
-      verilog.push ("assign " + cur_pp + " = " +
-		    (j==n+1 ? "~ " : "") +
-		    "(" +
-		    select_e  + " & " + e_lower    + " | " + 
-		    select_2x + " & " + twox_lower + " | " +
-		    select_n2x+ " & " + n2x_lower  + " | " +
-		    select_ne + " & " + ne_lower   + "  " +
+    //   verilog.push ("wire logic " + cur_pp + ";");
+    //   verilog.push ("assign " + cur_pp + " = " +
+    // 		    (j==n+1 ? "~ " : "") +
+    // 		    "(" +
+    // 		    select_e  + " & " + e_lower    + " | " + 
+    // 		    select_2x + " & " + twox_lower + " | " +
+    // 		    select_n2x+ " & " + n2x_lower  + " | " +
+    // 		    select_ne + " & " + ne_lower   + "  " +
 		   
-		    ");");
-    }
+    // 		    ");");
+    // }
 
     verilog.push ("assign " + cmp + " = " + select_ne + " | " + select_n2x + ";");
     
@@ -254,7 +507,7 @@ void create_signedbr4pp (int m, int n,
     }
     for (int j = 0; j < n+2 && j+i*2 < pp_dim2 ; j++){
       string cur;
-      cur = "pp_" + to_string(i) + "_" + to_string(j) + "";
+      cur = "pp_" + to_string(i) + "[" + to_string(j) + "]";
       pp_matrix[i][j+i*2] = cur;
     }
   }
@@ -285,7 +538,8 @@ void create_signedbr4pp (int m, int n,
   //  cout << endl;
 
 
-  
+
+  print_pp(pp_matrix, pp_dim1, pp_dim2, verilog, true);
     
    
 
@@ -452,6 +706,8 @@ void create_unsignedbr4pp (int m, int n,
   //  cout << endl;
 
   //print_pp(pp_matrix, pp_dim1, pp_dim2);
+
+  print_pp(pp_matrix, pp_dim1, pp_dim2, verilog, true);
 
    
 }

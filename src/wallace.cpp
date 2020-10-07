@@ -1,3 +1,40 @@
+// Note: The license below is based on the template at:
+// http://opensource.org/licenses/BSD-3-Clause
+
+// Copyright (C) 2020 Regents of the University of Texas
+//All rights reserved.
+
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+
+// o Redistributions of source code must retain the above copyright
+//   notice, this list of conditions and the following disclaimer.
+
+// o Redistributions in binary form must reproduce the above copyright
+//   notice, this list of conditions and the following disclaimer in the
+//   documentation and/or other materials provided with the distribution.
+
+// o Neither the name of the copyright holders nor the names of its
+//   contributors may be used to endorse or promote products derived
+//   from this software without specific prior written permission.
+
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+// Original Author(s):
+// Mertcan Temel         <mert@utexas.edu>
+
+
 #include <iostream>
 #include <queue>          // std::queue
 #include <fstream>
@@ -34,6 +71,108 @@ int get_max_queue_size (std::queue<string>* q, int size){
 
   return max;
 }
+
+
+
+void create_two_result_vectors (std::queue<string>*& main_queue,
+				int out_size,
+				std::queue<string>& verilog,
+				bool signed_mult,
+				int& result_vector_size){
+
+  int final_offset = 0;
+  int final_size = 0;
+  bool flag = false;
+
+  string final_in1 = " }";
+  string final_in2 = " }";
+
+  std::queue<string> fin1;
+  std::queue<string> fin2;
+
+
+  
+  for (int j = 0; j < out_size; j++){
+
+    if (flag || main_queue[j].size()>1) {
+      flag = true;
+
+      bool b = false;
+      for (int i = j; main_queue[i].empty() && i<out_size; i++ )
+	if (i==out_size-1)
+	  b=true;
+      if(b)
+	break;
+      
+      fin1.push (main_queue[j].empty() ? "1'b0" : main_queue[j].front());
+
+      // final_in1 += (main_queue[j].empty() ? "1'b0" : main_queue[j].front());
+
+      if (!main_queue[j].empty())
+	main_queue[j].pop();
+
+      fin2.push (main_queue[j].empty() ? "1'b0" : main_queue[j].front());
+      //final_in2 += (main_queue[j].empty() ? "1'b0" : main_queue[j].front());
+      if (!main_queue[j].empty())
+	main_queue[j].pop();
+      final_size++;
+
+    } else {
+      final_offset++;
+      string cur = "assign result0[" + to_string(j) + "] = "
+	+ main_queue[j].front() + ";";
+      main_queue[j].pop();
+      verilog.push(cur);
+      cur = "assign result1[" + to_string(j) + "] = 1'b0;";
+      verilog.push(cur);
+    }
+  }
+
+
+  while (!fin1.empty()) {
+    final_in1 = fin1.front() + final_in1;
+    if (fin1.size() > 1)
+      final_in1 = ", " + final_in1;
+    else
+      final_in1 = "{" + final_in1;
+    fin1.pop();
+  }
+
+
+  while (!fin2.empty()) {
+    final_in2 = fin2.front() + final_in2;
+    if (fin2.size() > 1)
+      final_in2 = ", " + final_in2;
+    else
+      final_in2 = "{" + final_in2;
+    fin2.pop();
+  }
+
+  verilog.push ("");
+  
+  if (final_size > 0){
+    
+    verilog.push ("assign result0[" + to_string(final_size+final_offset+-1) + ":"
+		  + to_string(final_offset) + "] = " + final_in1 + ";");
+    verilog.push ("assign result1[" + to_string(final_size+final_offset+-1) + ":"
+		  + to_string(final_offset) + "] = " + final_in2 + ";");
+		  
+  }
+
+  result_vector_size = final_size+final_offset;
+
+
+  for (int i = result_vector_size; i< out_size; i++)
+    if (signed_mult){
+      verilog.push("assign result0["+to_string(i)+"] = result0["+to_string(result_vector_size-1)+"];");
+      verilog.push("assign result1["+to_string(i)+"] = result1["+to_string(result_vector_size-1)+"];");
+    }else{
+      verilog.push("assign result0["+to_string(i)+"] = 1'b0;");
+      verilog.push("assign result1["+to_string(i)+"] = 1'b0;");
+    }
+  
+}
+
 
 void create_finaladder_inst (std::queue<string>*& main_queue,
 			     string final_stage_adder,
@@ -122,11 +261,14 @@ void create_finaladder_inst (std::queue<string>*& main_queue,
     verilog.push (fin_inst);
 
     verilog.push ("assign result[" + to_string(out_size-1) + ":"
-		     + to_string(final_offset) + "] = adder_result[" +
-		     to_string(out_size-1-final_offset) +":0];" );
+		  + to_string(final_offset) + "] = adder_result[" +
+		  to_string(out_size-1-final_offset) +":0];" );
   }
 
   adder_size = final_size;
+
+  
+ 
 
 }
 
@@ -135,6 +277,8 @@ void create_wallacetree (string** pp_matrix,
 			 int pp_dim1,
 			 int pp_dim2,
 			 int out_size,
+			 bool create_fin_adder,
+			 bool signed_mult,
 			 std::queue<string>& verilog,
 			 int& adder_size){
 
@@ -148,9 +292,13 @@ void create_wallacetree (string** pp_matrix,
 	main_queue[j].push (pp_matrix[i][j]);
 
   int cnt = 0;
+  int stage_cnt = 0;
 
   while (get_max_queue_size(main_queue, out_size) > 2) {
     // Step 1: sum the stuff in main_queue with fa/ha
+
+    verilog.push("");
+    verilog.push("// Wallace Summation Stage " + to_string(++stage_cnt));
     for (int j = 0; j < out_size; j++){
       std::queue<string>& cur = main_queue[j];
       while (cur.size() >= 2){
@@ -202,12 +350,21 @@ void create_wallacetree (string** pp_matrix,
 
   }
 
-  create_finaladder_inst (main_queue,
-  			  final_stage_adder,
-  			  out_size,
-  			  verilog,
-  			  adder_size);
+  verilog.push("");
 
+  if (create_fin_adder)
+    create_finaladder_inst (main_queue,
+			    final_stage_adder,
+			    out_size,
+			    verilog,
+			    adder_size);
+  else
+    create_two_result_vectors (main_queue,
+			       out_size,
+			       verilog,
+			       signed_mult,
+			       adder_size);
+  
    delete[] temp_queue;
   // delete[] main_queue;
 

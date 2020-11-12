@@ -41,6 +41,7 @@
 
 #include <string>
 #include <sstream>
+#include <cstring>
 
 #include <cmath>
 
@@ -151,7 +152,7 @@ int interact_with_user (int argc, char **argv,
 
     while(1) {
       
-      cout << "1. Stand-alone Multiplier " << endl;
+      cout << "1. Stand-alone (Isolated) Multiplier " << endl;
       cout << "2. Fused Multiply-add " << endl;
       cout << "3. Merged Four Multipliers " << endl;     
       cout << "4. Dot Product " << endl;

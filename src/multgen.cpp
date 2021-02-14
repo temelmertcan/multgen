@@ -152,8 +152,8 @@ int interact_with_user (int argc, char **argv,
 
     while(1) {
       
-      cout << "1. Stand-alone (Isolated) Multiplier " << endl;
-      cout << "2. Fused Multiply-add " << endl;
+      cout << "1. Stand-alone (Isolated) Multiplier  " << endl;
+      cout << "2. MAC (a * b + c) " << endl;
       cout << "3. Merged Four Multipliers " << endl;     
       cout << "4. Dot Product " << endl;
       cout << "5. Only a Vector Adder " << endl;
@@ -165,7 +165,7 @@ int interact_with_user (int argc, char **argv,
 	main_type = "StandAlone";
 	break;
       } else if (s.compare ("2") == 0)  {
-	main_type = "FMA";
+	main_type = "MAC";
 	break;
       } else if (s.compare ("3") == 0)  {
 	main_type = "FourMult";
@@ -299,14 +299,14 @@ int interact_with_user (int argc, char **argv,
 	out_size = in1_size+in2_size;
     }
 
-    if (main_type.compare("FMA") == 0){
+    if (main_type.compare("MAC") == 0){
       cout << "Enter IN1 (Multiplier) size: ";
       cin >> in1_size;
 
       cout << "Enter IN2 (Multiplicand) size: ";
       cin >> in2_size;
 
-      cout << "Enter IN3 (number to be added) size: ";
+      cout << "Enter IN3 (Addend) size: ";
       cin >> in3_size;
 
       cout << "Enter Output size (any value less than \""
@@ -333,7 +333,7 @@ int interact_with_user (int argc, char **argv,
 	cout << "Input size must be divisible by 2. ";
       }
 
-      cout << "Enter IN3 (number to be added after multiplication) size (enter 0 to omit): ";
+      cout << "Enter IN3 (Addend, number to be added after multiplication) size (enter 0 to omit): ";
       cin >> in3_size;
 
 
@@ -365,7 +365,7 @@ int interact_with_user (int argc, char **argv,
 	return 1;
       }
 
-      cout << "Enter IN3 (number to be added) size (enter 0 to omit): ";
+      cout << "Enter IN3 (Addend, number to be added after multiplication) size (enter 0 to omit): ";
       cin >> in3_size;
 
       cout << "Enter Output size (any value less than \""
@@ -871,14 +871,14 @@ int create_fma (int  in1_size,
     return retval;
   
 
-  string FMA_Merger_module_name = "FMA_Merger_"
+  string MAC_Merger_module_name = "MAC_Merger_"
     + std::string(signed_mult ? "Signed_" : "Unsigned_")
     + to_string(in1_size) + "x"
     + to_string(in2_size) + "_"
     + to_string(in3_size)
     + (out_size != max(in1_size+in2_size+1,in3_size+1) ? "_" + to_string(out_size) : "" );
 
-  verilog.push ("module " + FMA_Merger_module_name + "(");
+  verilog.push ("module " + MAC_Merger_module_name + "(");
   verilog.push("indent");
   verilog.push("indent");
   verilog.push ("input logic [" + to_string(mult_out_size-1) + ":0] m1_0,");
@@ -979,7 +979,7 @@ int create_fma (int  in1_size,
 
    
 
-   module_name = "FMA_" + tree + "_" + pp_encoding + "_"
+   module_name = "MAC_" + tree + "_" + pp_encoding + "_"
      + final_stage_adder + "_"
      + to_string(in1_size) + "x"
      + to_string(in2_size) + "_plus_"
@@ -1007,7 +1007,7 @@ int create_fma (int  in1_size,
    verilog.push("");
    
    
-   verilog.push (FMA_Merger_module_name + " merger (m1_0, m1_1, IN3, result);");
+   verilog.push (MAC_Merger_module_name + " merger (m1_0, m1_1, IN3, result);");
    
    verilog.push("outdent");
    verilog.push("");
@@ -1016,7 +1016,7 @@ int create_fma (int  in1_size,
    verilog.push("");
    
    cout << endl;
-   cout << "Fused Multiply-add Module (" << module_name << ") is created." << endl;
+   cout << "Multiply-Accumulate Module (" << module_name << ") is created." << endl;
    cout << "   Inputs: IN1[" << in1_size-1 << ":0], IN2[" << in2_size-1 << ":0], IN3[" << in3_size-1 << ":0]" << endl;
    cout << "   Output: result[" << out_size-1 << ":0]" << endl;
    cout << "   Function: result = IN1 * IN2 + IN3 " << (signed_mult?"(signed)":"(unsigned)") << endl;
@@ -1333,7 +1333,7 @@ int main(int argc, char **argv) {
 		      verilog,
 		      adder_size);
 
-  } else if (main_type.compare("FMA") == 0){
+  } else if (main_type.compare("MAC") == 0){
     create_fma (in1_size,
 		in2_size,
 		in3_size,

@@ -163,7 +163,7 @@ void create_two_result_vectors (std::queue<string>*& main_queue,
 
 
   for (int i = result_vector_size; i< out_size; i++)
-    if (signed_mult){
+    if (signed_mult && false){
       verilog.push("assign result0["+to_string(i)+"] = result0["+to_string(result_vector_size-1)+"];");
       verilog.push("assign result1["+to_string(i)+"] = result1["+to_string(result_vector_size-1)+"];");
     }else{

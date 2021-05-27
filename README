@@ -25,6 +25,9 @@ You can use these generator as follows:
 Generated multiplier can be verified in ACL2 following the method published in:
 https://link.springer.com/chapter/10.1007/978-3-030-53288-8_23
 
+Note that some features are  still in development and generated multipliers
+might be incorrect. For example, we have found some buggy designs generated
+with the "Merged Multipliers" option.
 
 Mertcan Temel
 Electrical and Computer Engineering

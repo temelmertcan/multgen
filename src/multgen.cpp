@@ -181,8 +181,6 @@ int interact_with_user (int argc, char **argv,
 
     }
     
-    
-    
     while (main_type.compare("Adder")!=0) {
 
       cout << "1. Wallace Tree " << endl;
@@ -552,7 +550,7 @@ int create_four_mult (int  in_size,
   int in1_size = in_size;
   int in2_size = in_size;
   
-  int one_mult_in_size = in_size/2+(signed_mult?1:0);
+  int one_mult_in_size = in_size/2+1;//(signed_mult?1:0);
   int one_mult_out_size = one_mult_in_size*2;
 
   string one_mult_module_name;
@@ -599,11 +597,13 @@ int create_four_mult (int  in_size,
   int pp_dim1 = 0, pp_dim2 = 0;
   
 
-  if (!signed_mult){
+  if (!signed_mult && false){
     
-     pp_dim1 = 9;
+     pp_dim1 = 10;
      pp_dim2 = out_size;
      pp_matrix = new string*[pp_dim1];
+     int extra_one_count = 0;
+      
      for (int i = 0; i < pp_dim1; i++)
        pp_matrix[i] = new string[pp_dim2];
      
@@ -611,20 +611,36 @@ int create_four_mult (int  in_size,
        if (i<one_mult_out_size){
 	 pp_matrix[0][i] = "m1_0[" + to_string(i) + "]";
 	 pp_matrix[1][i] = "m1_1[" + to_string(i) + "]";
-       }
+       } else if (i==one_mult_out_size)
+	 extra_one_count ++;
+
+     
        if (i>=one_mult_in_size && i<(one_mult_out_size+one_mult_in_size)){
 	 pp_matrix[2][i] = "m2_0[" + to_string(i-one_mult_in_size) + "]";
 	 pp_matrix[3][i] = "m2_1[" + to_string(i-one_mult_in_size) + "]";
 	 pp_matrix[4][i] = "m3_0[" + to_string(i-one_mult_in_size) + "]";
 	 pp_matrix[5][i] = "m3_1[" + to_string(i-one_mult_in_size) + "]";
        }
+       else if ( i==(one_mult_out_size+one_mult_in_size))
+	 extra_one_count+=2;
+	 
        if (i>=one_mult_out_size ){
 	 pp_matrix[6][i] = "m4_0[" + to_string(i-one_mult_out_size) + "]";
 	 pp_matrix[7][i] = "m4_1[" + to_string(i-one_mult_out_size) + "]";
        }
+      
+       
        if (i<in3_size) {
 	 pp_matrix[8][i] = "IN3["+to_string(i)+"]";
        }
+
+       if ((extra_one_count&1)==1){
+	 pp_matrix[9][i] = "const_1";
+	 extra_one_count++;
+       }
+       extra_one_count= extra_one_count>>1;
+
+       
      }
 
     
@@ -643,7 +659,7 @@ int create_four_mult (int  in_size,
 
      int extra_one_count = 0;
      for (int i = 0;  i < pp_dim2; i++){
-       bool addone = false;
+       
        if (i<one_mult_out_size){
 	 pp_matrix[0][i] = "m1_0[" + to_string(i) + "]";
 	 pp_matrix[1][i] = "m1_1[" + to_string(i) + "]";
@@ -679,7 +695,7 @@ int create_four_mult (int  in_size,
 	 pp_matrix[9][i] = "const_1";
 	 extra_one_count++;
        }
-       extra_one_count= extra_one_count/2;
+       extra_one_count= extra_one_count>>1;
      }
      //cout << "extra_one_count" << extra_one_count << endl;
 
@@ -698,15 +714,16 @@ int create_four_mult (int  in_size,
 			signed_mult,
 			verilog,
 			adder_size);
-  create_daddatree (pp_matrix,
-		    final_stage_adder,
-		    pp_dim1,
-		    pp_dim2,
-		    out_size,
-		    true,
-		    signed_mult,
-		    verilog,
-		    adder_size);
+  else
+    create_daddatree (pp_matrix,
+		      final_stage_adder,
+		      pp_dim1,
+		      pp_dim2,
+		      out_size,
+		      true,
+		      signed_mult,
+		      verilog,
+		      adder_size);
   
 
    //print_pp(pp_matrix, pp_dim1, pp_dim2);
@@ -747,27 +764,56 @@ int create_four_mult (int  in_size,
 
   if(!signed_mult){
 
-    verilog.push("");
+     verilog.push("");
     verilog.push
-      (one_mult_module_name + " m1 (IN1["+to_string (one_mult_in_size-1)+":0], " +
-       "IN2["+to_string (one_mult_in_size-1)+":0], m1_0, m1_1);");
+      (one_mult_module_name + " m1 ({1'b0, IN1["+to_string (one_mult_in_size-2)+":0]}, " +
+       "{1'b0, IN2["+to_string (one_mult_in_size-2)+":0]}, m1_0, m1_1);");
     
     verilog.push
-      (one_mult_module_name + " m2 (IN1["+to_string (one_mult_in_size-1)+":0], " +
-       "IN2["+to_string (one_mult_in_size+one_mult_in_size-1)+":"+
-       to_string(one_mult_in_size)+"], m2_0, m2_1);");
+      (one_mult_module_name + " m2 (" + 
+       "{1'b0, "+
+       "IN2["+to_string (one_mult_in_size+one_mult_in_size-3)+":"+
+       to_string(one_mult_in_size-1)+"]}, "+
+       "{1'b0, IN1["+to_string (one_mult_in_size-2)+":0]}, " +
+       "m2_0, m2_1);");
 
      verilog.push
-      (one_mult_module_name + " m3 (IN1["+to_string (one_mult_in_size+one_mult_in_size-1)+":"+
-       to_string(one_mult_in_size)+"], " +
-       "IN2["+to_string (one_mult_in_size-1)+":0], m3_0, m3_1);");
+      (one_mult_module_name + " m3 ({1'b0, "+
+       "IN1["+to_string (one_mult_in_size+one_mult_in_size-3)+":"+
+       to_string(one_mult_in_size-1)+"]}, " +
+       "{1'b0, IN2["+to_string (one_mult_in_size-2)+":0]}, m3_0, m3_1);");
 
      verilog.push
-      (one_mult_module_name + " m4 (IN1["+to_string (one_mult_in_size+one_mult_in_size-1)+":"+
-       to_string(one_mult_in_size)+"], " +
-       "IN2["+to_string (one_mult_in_size+one_mult_in_size-1)+":"+
-       to_string(one_mult_in_size)+"], m4_0, m4_1);");
+      (one_mult_module_name + " m4 ({1'b0, "
+       +"IN1["+to_string (one_mult_in_size+one_mult_in_size-3)+":"+
+       to_string(one_mult_in_size-1)+"]}, " +
+       "{1'b0, "
+       +"IN2["+to_string (one_mult_in_size+one_mult_in_size-3)+":"+
+       to_string(one_mult_in_size-1)+"]}, m4_0, m4_1);");
+
      verilog.push("");
+    
+    // verilog.push("");
+    // verilog.push
+    //   (one_mult_module_name + " m1 (IN1["+to_string (one_mult_in_size-1)+":0], " +
+    //    "IN2["+to_string (one_mult_in_size-1)+":0], m1_0, m1_1);");
+    
+    // verilog.push
+    //   (one_mult_module_name + " m2 (IN1["+to_string (one_mult_in_size-1)+":0], " +
+    //    "IN2["+to_string (one_mult_in_size+one_mult_in_size-1)+":"+
+    //    to_string(one_mult_in_size)+"], m2_0, m2_1);");
+
+    //  verilog.push
+    //   (one_mult_module_name + " m3 (IN1["+to_string (one_mult_in_size+one_mult_in_size-1)+":"+
+    //    to_string(one_mult_in_size)+"], " +
+    //    "IN2["+to_string (one_mult_in_size-1)+":0], m3_0, m3_1);");
+
+    //  verilog.push
+    //   (one_mult_module_name + " m4 (IN1["+to_string (one_mult_in_size+one_mult_in_size-1)+":"+
+    //    to_string(one_mult_in_size)+"], " +
+    //    "IN2["+to_string (one_mult_in_size+one_mult_in_size-1)+":"+
+    //    to_string(one_mult_in_size)+"], m4_0, m4_1);");
+    //  verilog.push("");
 
   } else {
      verilog.push("");
@@ -776,10 +822,12 @@ int create_four_mult (int  in_size,
        "{1'b0, IN2["+to_string (one_mult_in_size-2)+":0]}, m1_0, m1_1);");
     
     verilog.push
-      (one_mult_module_name + " m2 ({1'b0, IN1["+to_string (one_mult_in_size-2)+":0]}, " +
+      (one_mult_module_name + " m2 (" + 
        "{IN2["+to_string (one_mult_in_size+one_mult_in_size-3)+"], "+
        "IN2["+to_string (one_mult_in_size+one_mult_in_size-3)+":"+
-       to_string(one_mult_in_size-1)+"]}, m2_0, m2_1);");
+       to_string(one_mult_in_size-1)+"]}, "+
+       "{1'b0, IN1["+to_string (one_mult_in_size-2)+":0]}, " +
+       "m2_0, m2_1);");
 
      verilog.push
       (one_mult_module_name + " m3 ({IN1["+to_string (one_mult_in_size+one_mult_in_size-3)+"], "+
@@ -975,8 +1023,6 @@ int create_fma (int  in1_size,
    verilog.push("endmodule");
 
    verilog.push("");
-
-
    
 
    module_name = "MAC_" + tree + "_" + pp_encoding + "_"

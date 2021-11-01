@@ -63,7 +63,8 @@ void create_two_result_vectors (std::queue<string>*& main_queue,
 				int out_size,
 				std::queue<string>& verilog,
 				bool signed_mult,
-				int& result_vector_size);
+				int& result_vector_size,
+				bool**& zeros_in_output);
 
 void create_wallacetree (string** pp_matrix,
 			 string final_stage_adder,
@@ -73,4 +74,5 @@ void create_wallacetree (string** pp_matrix,
 			 bool create_fin_adder,
 			 bool signed_mult,
 			 std::queue<string>& verilog,
-			 int& adder_size);
+			 int& adder_size,
+			 bool**& zeros_in_output);

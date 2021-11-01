@@ -24,6 +24,8 @@ You can use these generator as follows:
 2. ./multgen
 3. Follow the instructions to create the integer multiplier of your choice!
 
+./multgen -help can show available options.
+
 Generated multiplier can be verified in ACL2 following the method published in:
 https://link.springer.com/chapter/10.1007/978-3-030-53288-8_23
 

@@ -39,9 +39,17 @@
 #include <iostream>
 #include <queue>          // std::queue
 #include <fstream>
+#include <list>
 
 using namespace std;
 
+
+
+void add_extra_ones_to_pp_matrix (string *& last_row, int col_size, const std::list<int>& extra_ones_indices);
+
+std::list<int> merge_extra_ones_indices (const std::list<int>& extra_ones_indices1,
+                                         const std::list<int>& extra_ones_indices2,
+                                         const int& offset2);
 
 void print_pp (string** pp, int m, int n, std::queue<string>& verilog, bool to_file);
 
@@ -49,6 +57,7 @@ void create_signedpp (int m, int n,
 		      string**& pp_matrix,
 		      int& pp_dim1,
 		      int& pp_dim2,
+		      std::list<int>& extra_ones_indices,
 		      std::queue<string>& verilog);
 
 void create_unsignedpp (int m, int n,
@@ -63,17 +72,33 @@ void create_signedbr4pp (int m, int n,
 			int& pp_dim2,
 			 std::queue<string>& verilog);
 
+void create_br2pp (int m, int n, bool signed_mul,
+                   string**& pp_matrix,
+                   int& pp_dim1,
+                   int& pp_dim2,
+		   std::list<int>& extra_ones_indices,
+                   std::queue<string>& verilog);
+
+void create_br4pp (int m, int n, bool signed_mul,
+                   string**& pp_matrix,
+                   int& pp_dim1,
+                   int& pp_dim2,
+		   std::list<int>& extra_ones_indices,
+                   std::queue<string>& verilog);
+
 void create_br8pp (int m, int n, bool signed_mul,
 		   string**& pp_matrix,
 		   int& pp_dim1,
 		   int& pp_dim2,
+		   std::list<int>& extra_ones_indices,
 		   std::queue<string>& verilog);
 
 void create_br16pp (int m, int n, bool signed_mul,
-			string**& pp_matrix,
-			int& pp_dim1,
-			int& pp_dim2,
-			 std::queue<string>& verilog);
+		    string**& pp_matrix,
+		    int& pp_dim1,
+		    int& pp_dim2,
+		    std::list<int>& extra_ones_indices,
+		    std::queue<string>& verilog);
 
 void create_unsignedbr4pp (int m, int n,
 			   string**& pp_matrix,

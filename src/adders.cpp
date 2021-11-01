@@ -60,9 +60,9 @@ void create_ha_fa (bool ha_fa_with_gates, std::queue<string>& verilog){
   }else{
     verilog.push ("assign {c,s} = a + b;");
   }
-  verilog.push ("endmodule");
   verilog.push("outdent");
-  verilog.push("");
+  verilog.push ("endmodule");
+   verilog.push("");
 
   verilog.push ("\n");
 
@@ -82,8 +82,9 @@ void create_ha_fa (bool ha_fa_with_gates, std::queue<string>& verilog){
   }else{
      verilog.push ("assign {c,s} = x + y + z;");
   }
-  verilog.push ("endmodule");
   verilog.push("outdent");
+  verilog.push ("endmodule");
+  
   verilog.push("");
 
   verilog.push ("");

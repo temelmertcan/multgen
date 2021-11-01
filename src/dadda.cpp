@@ -90,13 +90,18 @@ void create_daddatree (string** pp_matrix,
 		       string final_stage_adder,
 		       int pp_dim1,
 		       int pp_dim2,
-		       int out_size,
+		       int& out_size,
 		       bool create_fin_adder,
 		       bool signed_mult,
 		       std::queue<string>& verilog,
-		       int& adder_size
+		       int& adder_size,
+		       bool**& zeros_in_output
 		       ){
 
+
+  //out_size = create_fin_adder ? out_size : pp_dim2;
+
+  
   std::queue<string>* main_queue = new std::queue<string>[out_size];
   std::queue<string>* temp_queue = new std::queue<string>[out_size];
 
@@ -114,9 +119,12 @@ void create_daddatree (string** pp_matrix,
   get_dadda_coeffs(get_max_queue_size(main_queue, out_size), coeffs, coeffs_size);
   
 
+
+  // cout << "out_size " << out_size << endl;
+  
   //print_queue(main_queue, out_size);
 
-  cout << "Dadda summmation stage count: " << coeffs_size << endl; 
+  //cout << "Dadda summmation stage count: " << coeffs_size << endl; 
   
   
   for (int phase = 0; phase < coeffs_size; phase++) {
@@ -196,7 +204,8 @@ void create_daddatree (string** pp_matrix,
 			       out_size,
 			       verilog,
 			       signed_mult,
-			       adder_size);
+			       adder_size,
+			       zeros_in_output);
   
 
    delete[] temp_queue;

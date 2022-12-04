@@ -41,8 +41,7 @@
 
 using namespace std;
 
-void create_ha_fa (std::queue<string>& verilog);
-
+void create_ha_fa (bool ha_fa_with_gates, std::queue<string>& verilog);
 
 void create_rp_adder (int size, std::queue<string>& verilog);
 

@@ -125,19 +125,25 @@ int interact_with_user (int argc, char **argv,
 			int& dot_size,
 			int& out_size,
 			bool& signed_mult,
+			bool& ha_fa_with_gates,
 			string& final_stage_adder,
 			string& pp_encoding,
 			string& tree,
 			string& main_type){
 
 
+  ha_fa_with_gates = true;
 
   if (argc == 2 && strcmp(argv[1], "-def") == 0) {
      in1_size = 8;
      in2_size = 8;
-     final_stage_adder = "KS";
-     pp_encoding = "SSP";
-     tree = "WT";
+     out_size = in1_size + in2_size;
+     signed_mult = true;
+     main_type = "StandAlone";
+     final_stage_adder = "RP";
+     pp_encoding = "SB4";
+     tree = "DT";
+     ha_fa_with_gates = false;
   }
   else if (argc == 6){
     sscanf(argv[1], "%d", &in1_size);
@@ -145,6 +151,7 @@ int interact_with_user (int argc, char **argv,
     pp_encoding = argv[3];
     tree = argv[4];
     final_stage_adder = argv[5];
+    main_type = "StandAlone";
   }
   else if (argc <= 1) {
 
@@ -223,6 +230,8 @@ int interact_with_user (int argc, char **argv,
       cout << "1. Simple" << endl;
       cout << "2. Booth radix-2" << endl;
       cout << "3. Booth radix-4" << endl;
+      cout << "4. Booth radix-8" << endl;
+      cout << "5. Booth radix-16" << endl;
 
       cout << "Select Partial Product Generation Algorithm: ";
       cin >> s;
@@ -234,6 +243,12 @@ int interact_with_user (int argc, char **argv,
 	break;
       }else if (s.compare ("3") == 0)  {
 	pp_encoding = "B4";
+	break;
+      }else if (s.compare ("4") == 0)  {
+	pp_encoding = "B8";
+	break;
+      }else if (s.compare ("5") == 0)  {
+	pp_encoding = "B16";
 	break;
       }else
 	cout << "Invalid Selection!" << endl;
@@ -251,7 +266,6 @@ int interact_with_user (int argc, char **argv,
       cout << "2. Han-Carlson Adder " << endl;
       cout << "3. Ladner-Fischer Adder " << endl;
       cout << "4. Kogge-Stone Adder " << endl;
-      //cout << "3. Booth radix-4 Signed " << endl;
 
       cout << "Select Final Stage Adder Algorithm: ";
       cin >> s;
@@ -331,7 +345,7 @@ int interact_with_user (int argc, char **argv,
 	cout << "Input size must be divisible by 2. ";
       }
 
-      cout << "Enter IN3 (Addend, number to be added after multiplication) size (enter 0 to omit): ";
+      cout << "Enter IN3 size (Addend, i.e., the number to be added after multiplication) size (enter 0 to omit): ";
       cin >> in3_size;
 
 
@@ -344,8 +358,10 @@ int interact_with_user (int argc, char **argv,
       }
       else out_size = max(in1_size+in2_size+(in3_size>0?1:0),in3_size+1);
       
-      if (out_size > max(in1_size+in2_size+(in3_size>0?1:0),in3_size+1))
-	out_size = max(in1_size+in2_size+(in3_size>0?1:0),in3_size+1); 
+      if (out_size > max(in1_size+in2_size+(in3_size>0?1:0),in3_size+1)){
+	out_size = max(in1_size+in2_size+(in3_size>0?1:0),in3_size+1);
+	cout << "Outsize is corrected to " << out_size << endl;
+      }
     }
 
     if (main_type.compare("DOT") == 0){
@@ -443,6 +459,18 @@ int create_mult ( int  in1_size,
   } else if (pp_encoding.compare ("SB4") == 0) {
     create_signedbr4pp (in1_size, in2_size, pp_matrix,
 			pp_dim1, pp_dim2, verilog);
+  } else if (pp_encoding.compare ("SB8") == 0) {
+    create_br8pp (in1_size, in2_size, true, pp_matrix,
+			pp_dim1, pp_dim2, verilog);
+  } else if (pp_encoding.compare ("UB8") == 0) {
+    create_br8pp (in1_size, in2_size, false, pp_matrix,
+		  pp_dim1, pp_dim2, verilog);
+  } else if (pp_encoding.compare ("SB16") == 0) {
+    create_br16pp (in1_size, in2_size, true, pp_matrix,
+		   pp_dim1, pp_dim2, verilog);
+  }  else if (pp_encoding.compare ("UB16") == 0) {
+    create_br16pp (in1_size, in2_size, false, pp_matrix,
+		   pp_dim1, pp_dim2, verilog);
   } else if (pp_encoding.compare ("SB2") == 0) {
     create_signedbr2pp (in1_size, in2_size, pp_matrix,
 			pp_dim1, pp_dim2, verilog);
@@ -1339,14 +1367,13 @@ int main(int argc, char **argv) {
   string tree;
   string main_type;
   bool signed_mult;
+  bool ha_fa_with_gates;
+  queue<string> verilog;
 
-  interact_with_user(argc, argv, in1_size, in2_size, in3_size, dot_size, out_size, signed_mult, final_stage_adder,
+  interact_with_user(argc, argv, in1_size, in2_size, in3_size, dot_size, out_size, signed_mult, ha_fa_with_gates, final_stage_adder,
 		     pp_encoding, tree, main_type);
 
  
-
-  queue<string> verilog;
-
   enter_license(verilog);
   
   int adder_size;
@@ -1357,7 +1384,7 @@ int main(int argc, char **argv) {
   bool create_fin_adder = true;
 
   
-  create_ha_fa (verilog);
+  create_ha_fa (ha_fa_with_gates, verilog);
 
   if (main_type.compare("StandAlone") == 0){
     retval0 = create_mult(in1_size, in2_size,
@@ -1406,8 +1433,10 @@ int main(int argc, char **argv) {
     create_fin_adder = true;
     module_name = final_stage_adder + "_" + to_string (in1_size);
     adder_size = in1_size;
-  } else
+  } else {
     cout << "not implemented yet!" << endl;
+    return 1;
+  }
   
 
   if (create_fin_adder){

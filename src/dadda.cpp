@@ -116,6 +116,7 @@ void create_daddatree (string** pp_matrix,
 
   //print_queue(main_queue, out_size);
 
+  cout << "Dadda summmation stage count: " << coeffs_size << endl; 
   
   
   for (int phase = 0; phase < coeffs_size; phase++) {

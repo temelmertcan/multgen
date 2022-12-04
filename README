@@ -10,6 +10,8 @@ with these partial products (signed or unsigned):
 - Simple 
 - Booth radix-2
 - Booth radix-4
+- Booth radix-8
+- Booth radix-16
 and with these final stage adders:
 - Ladner-Fisher
 - Kogge-Stone
@@ -25,9 +27,11 @@ You can use these generator as follows:
 Generated multiplier can be verified in ACL2 following the method published in:
 https://link.springer.com/chapter/10.1007/978-3-030-53288-8_23
 
-Note that some features are  still in development and generated multipliers
-might be incorrect. For example, we have found some buggy designs generated
-with the "Merged Multipliers" option.
+Beware  that  it is  not  guaranteed  for  all possible  configurations  to
+generate functionally correct  designs. You can follow our  paper below and
+use our tool on ACL2 to make  sure that you have correct designs. Some demo
+files for verification are given here:
+https://github.com/acl2/acl2/tree/master/books/projects/rp-rewriter/lib/mult3/demo
 
 Mertcan Temel
 Electrical and Computer Engineering

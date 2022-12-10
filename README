@@ -24,7 +24,13 @@ You can use these generator as follows:
 2. ./multgen
 3. Follow the instructions to create the integer multiplier of your choice!
 
-./multgen -help can show available options.
+For all available options, run: ./multgen -help
+
+The generator will also generate  a module with the design's specification.
+This extra  module's output  signal "design_is_correct"  becomes 1  iff the
+design computes  the correct  result. This can  help verify  designs easily
+without having the user manually define the spec.  Example output files are
+given in the examples directory.
 
 Generated multiplier can be verified in ACL2 following the method published in:
 https://link.springer.com/chapter/10.1007/978-3-030-53288-8_23

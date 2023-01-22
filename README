@@ -1,4 +1,4 @@
-An efficient integer multiplier generator. This program can generate these multipliers:
+An efficient integer multiplier generator, outputting Verilog modules. This program can generate these multipliers:
 - Stand-alone (a simple multiplier with partial product generation, summation tree and a final stage adder)
 - Merged Multipliers (merges four smaller stand-alone multipliers to attain the same functionality)
 - Multiply-Accumulate (MAC)
@@ -24,22 +24,25 @@ You can use these generator as follows:
 2. ./multgen
 3. Follow the instructions to create the integer multiplier of your choice!
 
-For all available options, run: ./multgen -help
+To see all available options, run:
+./multgen -help
 
 The generator will also generate  a module with the design's specification.
 This extra  module's output  signal "design_is_correct"  becomes 1  iff the
 design computes  the correct  result. This can  help verify  designs easily
 without having the user manually define the spec.  Example output files are
-given in the examples directory.
+given in the "examples" directory.
 
 Generated multiplier can be verified in ACL2 following the method published in:
 https://link.springer.com/chapter/10.1007/978-3-030-53288-8_23
 
-Beware  that  it is  not  guaranteed  for  all possible  configurations  to
-generate functionally correct  designs. You can follow our  paper below and
-use our tool on ACL2 to make  sure that you have correct designs. Some demo
-files for verification are given here:
+Beware  that this generator itself is not verified and it is  not  guaranteed  for 
+all possible  configurations  to generate functionally correct  designs. You can 
+follow our  paper and use our tool on ACL2 to make  sure that you have correct
+designs. Some demo files for verification are given here:
 https://github.com/acl2/acl2/tree/master/books/projects/rp-rewriter/lib/mult3/demo
+with documentation:
+https://www.cs.utexas.edu/users/moore/acl2/manuals/current/manual/?topic=RP____MULTIPLIER-VERIFICATION
 
 Mertcan Temel
 Electrical and Computer Engineering

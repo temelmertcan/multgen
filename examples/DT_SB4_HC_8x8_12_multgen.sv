@@ -67,7 +67,7 @@ module DT_SB4_HC_8x8_12(
     assign mcand_1x = {{1{mcand[7]}},  mcand};
     assign mcand_2x = {{0{mcand[7]}},  mcand, 1'b0};
     
-    // Signed Booth Radix-4 Partial Products. Multiplier selectors: mult[1] mult[0] 1'b0
+    // Booth Radix-4 Partial Products. Multiplier selectors: mult[1] mult[0] 1'b0
     wire logic select_e_0, select_2x_0, tcomp0, select_ne_0, select_n2x_0;
     assign select_e_0 = ((~ mult[1]) & (mult[0] ^ 1'b0));
     assign select_ne_0 = mult[1] &  (mult[0] ^ 1'b0);
@@ -81,7 +81,7 @@ module DT_SB4_HC_8x8_12(
                     (select_ne_0 ? (~ mcand_1x) : 0)); 
     assign tcomp0 =  select_n2x_0 | select_ne_0;
     
-    // Signed Booth Radix-4 Partial Products. Multiplier selectors: mult[3] mult[2] mult[1]
+    // Booth Radix-4 Partial Products. Multiplier selectors: mult[3] mult[2] mult[1]
     wire logic select_e_1, select_2x_1, tcomp1, select_ne_1, select_n2x_1;
     assign select_e_1 = ((~ mult[3]) & (mult[2] ^ mult[1]));
     assign select_ne_1 = mult[3] &  (mult[2] ^ mult[1]);
@@ -95,7 +95,7 @@ module DT_SB4_HC_8x8_12(
                     (select_ne_1 ? (~ mcand_1x) : 0)); 
     assign tcomp1 =  select_n2x_1 | select_ne_1;
     
-    // Signed Booth Radix-4 Partial Products. Multiplier selectors: mult[5] mult[4] mult[3]
+    // Booth Radix-4 Partial Products. Multiplier selectors: mult[5] mult[4] mult[3]
     wire logic select_e_2, select_2x_2, tcomp2, select_ne_2, select_n2x_2;
     assign select_e_2 = ((~ mult[5]) & (mult[4] ^ mult[3]));
     assign select_ne_2 = mult[5] &  (mult[4] ^ mult[3]);
@@ -109,7 +109,7 @@ module DT_SB4_HC_8x8_12(
                     (select_ne_2 ? (~ mcand_1x) : 0)); 
     assign tcomp2 =  select_n2x_2 | select_ne_2;
     
-    // Signed Booth Radix-4 Partial Products. Multiplier selectors: mult[7] mult[6] mult[5]
+    // Booth Radix-4 Partial Products. Multiplier selectors: mult[7] mult[6] mult[5]
     wire logic select_e_3, select_2x_3, tcomp3, select_ne_3, select_n2x_3;
     assign select_e_3 = ((~ mult[7]) & (mult[6] ^ mult[5]));
     assign select_ne_3 = mult[7] &  (mult[6] ^ mult[5]);

@@ -311,7 +311,7 @@ void create_unsignedbr2pp (int m, int n,
 
   for (int i = 0; i < m+1; i++){
     verilog.push ("");
-    verilog.push ("// Signed Booth Radix-2 Partial Products Row " + to_string(i+1));
+    verilog.push ("// Booth Radix-2 Partial Products Row " + to_string(i+1));
     string m0 = (i == 0 ? "1'b0" : "IN1[" + to_string(i - 1) + "]");
     string m1 = (i==m?"1'b0":"IN1[" + to_string(i) + "]");
 
@@ -829,7 +829,7 @@ void create_br2pp (int m, int n, bool signed_mul,
     string m0 = (i == 0 ? "1'b0" : "mult[" + to_string(i-1) + "]");
     string m1 = "mult[" + to_string(i) + "]";
    
-    verilog.push ("// Signed Booth Radix-2 Partial Products. Multiplier selectors: " + m1 + " " + m0);
+    verilog.push ("// Booth Radix-2 Partial Products. Multiplier selectors: " + m1 + " " + m0);
 
     string select_e = "select_e_" + to_string(i);
     string select_ne = "select_ne_" + to_string(i);
@@ -932,7 +932,7 @@ void create_br4pp (int m, int n, bool signed_mul,
     string m1 = "mult[" + to_string(i) + "]";
     string m2 = (i >= m-1 ? "mult[" + to_string(m-1) + "]" : "mult[" + to_string(i+1) + "]");
 
-    verilog.push ("// Signed Booth Radix-4 Partial Products. Multiplier selectors: " + m2 + " " + m1 + " " + m0);
+    verilog.push ("// Booth Radix-4 Partial Products. Multiplier selectors: " + m2 + " " + m1 + " " + m0);
 
     string select_e = "select_e_" + to_string(i/2);
     string select_ne = "select_ne_" + to_string(i/2);
@@ -1056,7 +1056,7 @@ void create_br8pp (int m, int n, bool signed_mul,
     string m2 = (i >= m-1 ? "mult[" + to_string(m-1) + "]" : "mult[" + to_string(i+1) + "]");
     string m3 = (i >= m-2 ? "mult[" + to_string(m-1) + "]" : "mult[" + to_string(i+2) + "]");
 
-    verilog.push ("// Signed Booth Radix-8 Partial Products. Multiplier selectors: " + m3 + " " + m2 + " " + m1 + " " + m0);
+    verilog.push ("// Booth Radix-8 Partial Products. Multiplier selectors: " + m3 + " " + m2 + " " + m1 + " " + m0);
 
     string select_e = "select_e_" + to_string(i/3);
     string select_ne = "select_ne_" + to_string(i/3);
@@ -1225,7 +1225,7 @@ void create_br16pp (int m, int n, bool signed_mul,
     string m3 = (i >= m-2 ? "mult[" + to_string(m-1) + "]" : "mult[" + to_string(i+2) + "]");
     string m4 = (i >= m-3 ? "mult[" + to_string(m-1) + "]" : "mult[" + to_string(i+3) + "]");
 
-    verilog.push ("// Signed Booth Radix-16 Partial Products. Multiplier selectors: " + m4 + " " + m3 + " " + m2 + " " + m1 + " " + m0);
+    verilog.push ("// Booth Radix-16 Partial Products. Multiplier selectors: " + m4 + " " + m3 + " " + m2 + " " + m1 + " " + m0);
 
     string select_e = "select_e_" + to_string(i/4);
     string select_ne = "select_ne_" + to_string(i/4);

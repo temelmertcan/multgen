@@ -79,7 +79,7 @@ module DT_UB16_KS_16x16(
     assign mcand_7x = mcand_8x - mcand_1x;
     assign mcand_8x =  {{0{mcand[16]}},  mcand, 3'b0};
     
-    // Signed Booth Radix-16 Partial Products. Multiplier selectors: mult[3] mult[2] mult[1] mult[0] 1'b0
+    // Booth Radix-16 Partial Products. Multiplier selectors: mult[3] mult[2] mult[1] mult[0] 1'b0
     wire logic select_e_0, select_2x_0, select_3x_0, select_4x_0, select_5x_0, select_6x_0, select_7x_0, select_8x_0, tcomp0, select_ne_0, select_n2x_0, select_n3x_0, select_n4x_0, select_n5x_0, select_n6x_0, select_n7x_0, select_n8x_0;
     assign select_e_0 = ((~ mult[3]) & (~ mult[2]) & (~ mult[1]) & (mult[0] ^ 1'b0));
     assign select_2x_0 = (~ mult[3]) & (~ mult[2]) & (mult[1] ^ mult[0])& (mult[1] ^ 1'b0);
@@ -117,7 +117,7 @@ module DT_UB16_KS_16x16(
                     (select_ne_0 ? (~ mcand_1x) : 0)); 
     assign tcomp0 = select_ne_0 | select_n8x_0 | select_n7x_0 | select_n6x_0 | select_n5x_0 | select_n4x_0 | select_n3x_0 | select_n2x_0;
     
-    // Signed Booth Radix-16 Partial Products. Multiplier selectors: mult[7] mult[6] mult[5] mult[4] mult[3]
+    // Booth Radix-16 Partial Products. Multiplier selectors: mult[7] mult[6] mult[5] mult[4] mult[3]
     wire logic select_e_1, select_2x_1, select_3x_1, select_4x_1, select_5x_1, select_6x_1, select_7x_1, select_8x_1, tcomp1, select_ne_1, select_n2x_1, select_n3x_1, select_n4x_1, select_n5x_1, select_n6x_1, select_n7x_1, select_n8x_1;
     assign select_e_1 = ((~ mult[7]) & (~ mult[6]) & (~ mult[5]) & (mult[4] ^ mult[3]));
     assign select_2x_1 = (~ mult[7]) & (~ mult[6]) & (mult[5] ^ mult[4])& (mult[5] ^ mult[3]);
@@ -155,7 +155,7 @@ module DT_UB16_KS_16x16(
                     (select_ne_1 ? (~ mcand_1x) : 0)); 
     assign tcomp1 = select_ne_1 | select_n8x_1 | select_n7x_1 | select_n6x_1 | select_n5x_1 | select_n4x_1 | select_n3x_1 | select_n2x_1;
     
-    // Signed Booth Radix-16 Partial Products. Multiplier selectors: mult[11] mult[10] mult[9] mult[8] mult[7]
+    // Booth Radix-16 Partial Products. Multiplier selectors: mult[11] mult[10] mult[9] mult[8] mult[7]
     wire logic select_e_2, select_2x_2, select_3x_2, select_4x_2, select_5x_2, select_6x_2, select_7x_2, select_8x_2, tcomp2, select_ne_2, select_n2x_2, select_n3x_2, select_n4x_2, select_n5x_2, select_n6x_2, select_n7x_2, select_n8x_2;
     assign select_e_2 = ((~ mult[11]) & (~ mult[10]) & (~ mult[9]) & (mult[8] ^ mult[7]));
     assign select_2x_2 = (~ mult[11]) & (~ mult[10]) & (mult[9] ^ mult[8])& (mult[9] ^ mult[7]);
@@ -193,7 +193,7 @@ module DT_UB16_KS_16x16(
                     (select_ne_2 ? (~ mcand_1x) : 0)); 
     assign tcomp2 = select_ne_2 | select_n8x_2 | select_n7x_2 | select_n6x_2 | select_n5x_2 | select_n4x_2 | select_n3x_2 | select_n2x_2;
     
-    // Signed Booth Radix-16 Partial Products. Multiplier selectors: mult[15] mult[14] mult[13] mult[12] mult[11]
+    // Booth Radix-16 Partial Products. Multiplier selectors: mult[15] mult[14] mult[13] mult[12] mult[11]
     wire logic select_e_3, select_2x_3, select_3x_3, select_4x_3, select_5x_3, select_6x_3, select_7x_3, select_8x_3, tcomp3, select_ne_3, select_n2x_3, select_n3x_3, select_n4x_3, select_n5x_3, select_n6x_3, select_n7x_3, select_n8x_3;
     assign select_e_3 = ((~ mult[15]) & (~ mult[14]) & (~ mult[13]) & (mult[12] ^ mult[11]));
     assign select_2x_3 = (~ mult[15]) & (~ mult[14]) & (mult[13] ^ mult[12])& (mult[13] ^ mult[11]);
@@ -231,7 +231,7 @@ module DT_UB16_KS_16x16(
                     (select_ne_3 ? (~ mcand_1x) : 0)); 
     assign tcomp3 = select_ne_3 | select_n8x_3 | select_n7x_3 | select_n6x_3 | select_n5x_3 | select_n4x_3 | select_n3x_3 | select_n2x_3;
     
-    // Signed Booth Radix-16 Partial Products. Multiplier selectors: mult[16] mult[16] mult[16] mult[16] mult[15]
+    // Booth Radix-16 Partial Products. Multiplier selectors: mult[16] mult[16] mult[16] mult[16] mult[15]
     wire logic select_e_4, select_2x_4, select_3x_4, select_4x_4, select_5x_4, select_6x_4, select_7x_4, select_8x_4, tcomp4, select_ne_4, select_n2x_4, select_n3x_4, select_n4x_4, select_n5x_4, select_n6x_4, select_n7x_4, select_n8x_4;
     assign select_e_4 = ((~ mult[16]) & (~ mult[16]) & (~ mult[16]) & (mult[16] ^ mult[15]));
     assign select_2x_4 = (~ mult[16]) & (~ mult[16]) & (mult[16] ^ mult[16])& (mult[16] ^ mult[15]);

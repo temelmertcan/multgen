@@ -74,7 +74,7 @@ module WT_SB8_8x10_19(
     assign mcand_3x = mcand_1x + mcand_2x;
     assign mcand_4x = {{0{mcand[9]}},  mcand, 2'b0};
     
-    // Signed Booth Radix-8 Partial Products. Multiplier selectors: mult[2] mult[1] mult[0] 1'b0
+    // Booth Radix-8 Partial Products. Multiplier selectors: mult[2] mult[1] mult[0] 1'b0
     wire logic select_e_0, select_2x_0, select_3x_0, select_4x_0, tcomp0, select_ne_0, select_n2x_0, select_n3x_0, select_n4x_0;
     assign select_e_0 = ((~ mult[2]) & (~ mult[1]) & (mult[0] ^ 1'b0));
     assign select_ne_0 = mult[2] & mult[1] &  (mult[0] ^ 1'b0);
@@ -96,7 +96,7 @@ module WT_SB8_8x10_19(
                     (select_ne_0 ? (~ mcand_1x) : 0)); 
     assign tcomp0 = select_ne_0 | select_n4x_0 | select_n3x_0 | select_n2x_0;
     
-    // Signed Booth Radix-8 Partial Products. Multiplier selectors: mult[5] mult[4] mult[3] mult[2]
+    // Booth Radix-8 Partial Products. Multiplier selectors: mult[5] mult[4] mult[3] mult[2]
     wire logic select_e_1, select_2x_1, select_3x_1, select_4x_1, tcomp1, select_ne_1, select_n2x_1, select_n3x_1, select_n4x_1;
     assign select_e_1 = ((~ mult[5]) & (~ mult[4]) & (mult[3] ^ mult[2]));
     assign select_ne_1 = mult[5] & mult[4] &  (mult[3] ^ mult[2]);
@@ -118,7 +118,7 @@ module WT_SB8_8x10_19(
                     (select_ne_1 ? (~ mcand_1x) : 0)); 
     assign tcomp1 = select_ne_1 | select_n4x_1 | select_n3x_1 | select_n2x_1;
     
-    // Signed Booth Radix-8 Partial Products. Multiplier selectors: mult[7] mult[7] mult[6] mult[5]
+    // Booth Radix-8 Partial Products. Multiplier selectors: mult[7] mult[7] mult[6] mult[5]
     wire logic select_e_2, select_2x_2, select_3x_2, select_4x_2, tcomp2, select_ne_2, select_n2x_2, select_n3x_2, select_n4x_2;
     assign select_e_2 = ((~ mult[7]) & (~ mult[7]) & (mult[6] ^ mult[5]));
     assign select_ne_2 = mult[7] & mult[7] &  (mult[6] ^ mult[5]);

@@ -126,10 +126,10 @@ int interact_with_user (int argc, char **argv,
                         string& tree,
                         string& main_type){
 
+  if (argc == 1)
+    cout << "run ./multgen -help to see more options. " << endl; 
 
-
-
-  if (strcmp(argv[1], "-help") == 0 || strcmp(argv[1], "-h") == 0) {
+  if (argc > 1 && (strcmp(argv[1], "-help") == 0 || strcmp(argv[1], "-h") == 0)) {
     cout << "\nUsers  may  pass  arguments  to  the  program  to  configure  the\n" <<
       "design.  Any configuration  not  selected in  the arguments  will\n" <<
       "start an interactive session to help the user select from allowed\n" <<
@@ -171,7 +171,6 @@ int interact_with_user (int argc, char **argv,
   }
 
 
-  
   // defaults:
   ha_fa_with_gates = true;
 
@@ -191,7 +190,8 @@ int interact_with_user (int argc, char **argv,
   bool do_not_select_tree = false;
   bool do_not_ask_for_pp = false;
 
-  if (strcmp(argv[1], "-def") == 0) {
+
+  if (argc > 1 && strcmp(argv[1], "-def") == 0) {
     in1_size = 16;
     in2_size = 16;
     in3_size = 32;
@@ -204,9 +204,9 @@ int interact_with_user (int argc, char **argv,
     tree = "DT";
     ha_fa_with_gates = false;
     signed_mult = (pp_encoding[0] == 'S');
-   
 
   }
+
 
   for (int i = 1; i+1 < argc; i+=2){
     if (strcmp(argv[i], "-type") == 0)
@@ -214,13 +214,13 @@ int interact_with_user (int argc, char **argv,
     else if (strcmp(argv[i], "-tree") == 0)
       tree = argv[i+1];
     else if (strcmp(argv[i], "-pp") == 0){
-       pp_encoding = argv[i+1];
+      pp_encoding = argv[i+1];
       if (pp_encoding[0] == 'S'){
-	signed_mult = true;
-    
+        signed_mult = true;
+
       } else if (pp_encoding[0] == 'U'){
-	signed_mult = false;
-      
+        signed_mult = false;
+
       } else {
         cout << "Invalid pp encoding is passed. It should start with S or U, indicating signed/unsigned." << endl;
       }
@@ -282,16 +282,15 @@ int interact_with_user (int argc, char **argv,
         break;
       } else if (s.compare ("5") == 0)  {
         main_type = "Adder";
-	break;
+        break;
       } else
         cout << "Invalid Selection!" << endl;
     }
 
   if (main_type == "Adder"){
-     do_not_select_tree = true;
-     do_not_ask_for_pp = true;
+    do_not_select_tree = true;
+    do_not_ask_for_pp = true;
   }
-    
 
   if (tree != "DT" &&
       tree != "WT")
@@ -467,7 +466,7 @@ int interact_with_user (int argc, char **argv,
   }
 
   if (main_type.compare("FourMult") == 0){
-    
+
     bool in1_was_given = in1_size >= 0;
     while(1){
       if (in1_size < 0 || ((in1_size & 1) != 0)){
@@ -479,9 +478,8 @@ int interact_with_user (int argc, char **argv,
           break;
         cout << "Input size must be divisible by 2. ";
       } else
-	break;
+        break;
     }
-
 
     if (!in1_was_given && (in3_size <= 0)){
       cout << "Enter IN3 size (Addend, i.e., the number to be added after multiplication) size (enter 0 to omit): ";
@@ -489,7 +487,6 @@ int interact_with_user (int argc, char **argv,
     } else if (in3_size <= 0)
       in3_size = 0;
 
-    
     int max_out_size = max(in1_size+in2_size+(in3_size>0?1:0),in3_size+1);
     if (!in1in2size_is_in_params && (out_size < 0 || !out_size_is_in_params)){
       cout << "Enter Output size (any value less than \""
@@ -1161,7 +1158,7 @@ int create_mac (int  in1_size,
 
   if (in3_size < 1)
     in3_size = 1;
-  
+
   module_name = "MAC_" + tree + "_" + pp_encoding + "_"
     + final_stage_adder + "_"
     + to_string(in1_size) + "x"
@@ -1602,11 +1599,11 @@ int main(int argc, char **argv) {
   queue<string> verilog;
 
   int retval = interact_with_user(argc, argv, in1_size, in2_size, in3_size, dot_size, out_size, signed_mult, ha_fa_with_gates, final_stage_adder,
-                     pp_encoding, tree, main_type);
+                                  pp_encoding, tree, main_type);
 
   if (retval==2)
     return 0;
-  
+
   enter_license(verilog);
 
   int adder_size;
@@ -1632,7 +1629,7 @@ int main(int argc, char **argv) {
                           adder_size,
                           zeros_in_output);
   } else if (main_type.compare("FourMult") == 0) {
-    
+
     create_four_mult (in1_size, in3_size,
                       out_size,
                       final_stage_adder,

@@ -13,6 +13,7 @@ with these partial products (signed or unsigned):
 - Booth radix-8
 - Booth radix-16
 and with these final stage adders:
+- Brent-Kung
 - Ladner-Fisher
 - Kogge-Stone
 - Han-Carlson

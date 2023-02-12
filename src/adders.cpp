@@ -34,7 +34,6 @@
 // Original Author(s):
 // Mertcan Temel         <mert@utexas.edu>
 
-
 #include <iostream>
 #include <queue>          // std::queue
 #include <fstream>
@@ -62,7 +61,7 @@ void create_ha_fa (bool ha_fa_with_gates, std::queue<string>& verilog){
   }
   verilog.push("outdent");
   verilog.push ("endmodule");
-   verilog.push("");
+  verilog.push("");
 
   verilog.push ("\n");
 
@@ -80,11 +79,11 @@ void create_ha_fa (bool ha_fa_with_gates, std::queue<string>& verilog){
     verilog.push ("assign s = x ^ y ^ z;");
     verilog.push ("assign c = (x & y) | (x & z) | (y & z);");
   }else{
-     verilog.push ("assign {c,s} = x + y + z;");
+    verilog.push ("assign {c,s} = x + y + z;");
   }
   verilog.push("outdent");
   verilog.push ("endmodule");
-  
+
   verilog.push("");
 
   verilog.push ("");
@@ -285,7 +284,6 @@ void create_hc_adder (int size, std::queue<string>& verilog){
 
 }
 
-
 void create_lf_adder (int size, std::queue<string>& verilog){
 
   int index = 0;
@@ -340,7 +338,6 @@ void create_lf_adder (int size, std::queue<string>& verilog){
 
 }
 
-
 void create_ks_adder (int size, std::queue<string>& verilog){
 
   int index = 0;
@@ -357,7 +354,7 @@ void create_ks_adder (int size, std::queue<string>& verilog){
 
   int stage=0;
 
-  // lf midsteps
+  // ks steps
   for (int diff = 1; diff < size; diff *= 2){
     verilog.push("");
     verilog.push("// KS stage " + to_string(++stage));
@@ -383,6 +380,90 @@ void create_ks_adder (int size, std::queue<string>& verilog){
 
   verilog.push("");
   verilog.push("// KS postprocess ");
+
+  ppx_postprocess (size, index, g, p, verilog);
+
+  delete[] p;
+  delete[] g;
+
+  delete[] ptmp;
+  delete[] gtmp;
+
+}
+
+void create_bk_adder (int size, std::queue<string>& verilog){
+
+  int index = 0;
+
+  string* g = new string[size];
+  string* p = new string[size];
+
+  string* gtmp = new string[size];
+  string* ptmp = new string[size];
+
+  ppx_preprocess(size, index, "BK", gtmp, ptmp, verilog);
+  pgtmp_to_pg(size, gtmp, g);
+  pgtmp_to_pg(size, ptmp, p);
+
+  int stage=0;
+
+  verilog.push("");
+  verilog.push("// BK Step 1: group pairs from close to far ");
+
+  // bk first
+  unsigned long long coef;
+  for (coef = 1; coef*2-1 < size; coef *= 2){
+    verilog.push("");
+    verilog.push("// Stage " + to_string(++stage)+ " - pairs that are " + to_string(coef) + " index apart.");
+
+    for (int i=2*coef-1; i < size; i+=coef*2){
+
+      string new_p = "p_" + to_string(stage)+ "_" + to_string(i);
+      string new_g = "g_" + to_string(stage)+ "_" + to_string(i);
+
+      verilog.push ("wire logic "+ new_p + ";");
+      verilog.push ("wire logic "+ new_g + ";");
+
+      verilog.push ("assign "+ new_p + " = " + p[i] + " & " + p[i-coef] + ";");
+      verilog.push ("assign "+ new_g + " = (" + p[i] + " & " + g[i-coef] + ") | " + g[i] + ";");
+
+      gtmp[i] =  new_g;
+      ptmp[i] =  new_p;
+    }
+
+    pgtmp_to_pg(size, gtmp, g);
+    pgtmp_to_pg(size, ptmp, p);
+  }
+
+  verilog.push("");
+  verilog.push("");
+  verilog.push("// BK Step 2: group pairs from far to close ");
+
+  for (coef = coef/4; coef >= 1; coef = coef/2){
+    verilog.push("");
+    verilog.push("// Stage " + to_string(++stage)+ " - pairs that are " + to_string(coef) + " index apart.");
+
+    for (int i=3*coef-1; i < size; i+=coef*2){
+
+      string new_p = "p_" + to_string(stage)+ "_" + to_string(i);
+      string new_g = "g_" + to_string(stage)+ "_" + to_string(i);
+
+      verilog.push ("wire logic "+ new_p + ";");
+      verilog.push ("wire logic "+ new_g + ";");
+
+      verilog.push ("assign "+ new_p + " = " + p[i] + " & " + p[i-coef] + ";");
+      verilog.push ("assign "+ new_g + " = (" + p[i] + " & " + g[i-coef] + ") | " + g[i] + ";");
+
+      gtmp[i] =  new_g;
+      ptmp[i] =  new_p;
+    }
+    pgtmp_to_pg(size, gtmp, g);
+    pgtmp_to_pg(size, ptmp, p);
+
+  }
+
+  verilog.push("");
+  verilog.push("// BK postprocess ");
 
   ppx_postprocess (size, index, g, p, verilog);
 

@@ -17,6 +17,7 @@ and with these final stage adders:
 - Ladner-Fisher
 - Kogge-Stone
 - Han-Carlson
+- J. Sklansky Conditional
 - Ripple-Carry
 
 You can use these generator as follows:

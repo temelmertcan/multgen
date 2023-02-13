@@ -52,3 +52,5 @@ void create_lf_adder (int size, std::queue<string>& verilog);
 void create_ks_adder (int size, std::queue<string>& verilog);
 
 void create_bk_adder (int size, std::queue<string>& verilog);
+
+void create_JSkCond_adder (int size, std::queue<string>& verilog);

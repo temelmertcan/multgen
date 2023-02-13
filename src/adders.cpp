@@ -201,6 +201,9 @@ void create_hc_adder (int size, std::queue<string>& verilog){
   pgtmp_to_pg(size, gtmp, g);
   pgtmp_to_pg(size, ptmp, p);
 
+  verilog.push("\n// Han-Carlson Adder \n");
+
+
   // hc step1 :
   verilog.push("");
   verilog.push("// HC stage 1");
@@ -294,9 +297,12 @@ void create_lf_adder (int size, std::queue<string>& verilog){
   string* gtmp = new string[size];
   string* ptmp = new string[size];
 
+
   ppx_preprocess(size, index, "LF", gtmp, ptmp, verilog);
   pgtmp_to_pg(size, gtmp, g);
   pgtmp_to_pg(size, ptmp, p);
+
+  verilog.push("\n// Ladner-Fischer Adder \n");
 
   int stage=0;
 
@@ -352,6 +358,8 @@ void create_ks_adder (int size, std::queue<string>& verilog){
   pgtmp_to_pg(size, gtmp, g);
   pgtmp_to_pg(size, ptmp, p);
 
+  verilog.push("\n// Kogge-Stone Adder \n");
+
   int stage=0;
 
   // ks steps
@@ -401,9 +409,12 @@ void create_bk_adder (int size, std::queue<string>& verilog){
   string* gtmp = new string[size];
   string* ptmp = new string[size];
 
+
   ppx_preprocess(size, index, "BK", gtmp, ptmp, verilog);
   pgtmp_to_pg(size, gtmp, g);
   pgtmp_to_pg(size, ptmp, p);
+
+  verilog.push("\n// Brent-Kung Adder \n");
 
   int stage=0;
 
@@ -464,6 +475,69 @@ void create_bk_adder (int size, std::queue<string>& verilog){
 
   verilog.push("");
   verilog.push("// BK postprocess ");
+
+  ppx_postprocess (size, index, g, p, verilog);
+
+  delete[] p;
+  delete[] g;
+
+  delete[] ptmp;
+  delete[] gtmp;
+
+}
+
+void create_JSkCond_adder (int size, std::queue<string>& verilog){
+
+  int index = 0;
+
+  string* g = new string[size];
+  string* p = new string[size];
+
+  string* gtmp = new string[size];
+  string* ptmp = new string[size];
+
+
+  ppx_preprocess(size, index, "JSkCond", gtmp, ptmp, verilog);
+  pgtmp_to_pg(size, gtmp, g);
+  pgtmp_to_pg(size, ptmp, p);
+
+  verilog.push("");
+  verilog.push("// J. Sklansky – Conditional Adder \n");
+
+  int stage=0;
+
+  // bk first
+  unsigned long long coef;
+  for (coef = 1; coef < size; coef *= 2){
+    verilog.push("");
+    verilog.push("// Stage " + to_string(++stage)+ " - prop from 1 to " + to_string(coef) + " per group.");
+
+    for (int i=coef; i < size; i++){
+      //verilog.push("i:" + to_string(i));
+
+      if((i)/coef % 2 == 0)
+        continue;
+      int prev = i - (i % coef) - 1;
+
+      string new_p = "p_" + to_string(stage)+ "_" + to_string(i);
+      string new_g = "g_" + to_string(stage)+ "_" + to_string(i);
+
+      verilog.push ("wire logic "+ new_p + ";");
+      verilog.push ("wire logic "+ new_g + ";");
+
+      verilog.push ("assign "+ new_p + " = " + p[i] + " & " + p[prev] + ";");
+      verilog.push ("assign "+ new_g + " = (" + p[i] + " & " + g[prev] + ") | " + g[i] + ";");
+
+      gtmp[i] =  new_g;
+      ptmp[i] =  new_p;
+    }
+
+    pgtmp_to_pg(size, gtmp, g);
+    pgtmp_to_pg(size, ptmp, p);
+  }
+
+  verilog.push("");
+  verilog.push("// JSkCondA postprocess ");
 
   ppx_postprocess (size, index, g, p, verilog);
 

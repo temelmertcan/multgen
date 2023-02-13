@@ -161,6 +161,7 @@ int interact_with_user (int argc, char **argv,
       "  \t LF         - Ladner-Fischer adder.\n " <<
       "  \t HC         - Han-Carlson adder.\n" <<
       "  \t BK         - Brent-Kung adder.\n" <<
+      "  \t JSkCond    - J. Sklansky - Conditional adder.\n" <<
       "  -in1size <arg> : Size of the first operand. <arg> should be a positive integer: \n" <<
       "  -in2size <arg> : Size of the second operand. <arg> should be a positive integer: \n" <<
       "  -in3size <arg> : Size of the third operand, when relevant. <arg> should be a positive integer: \n" <<
@@ -376,7 +377,8 @@ int interact_with_user (int argc, char **argv,
       final_stage_adder != "HC" &&
       final_stage_adder != "LF" &&
       final_stage_adder != "KS" &&
-      final_stage_adder != "BK")
+      final_stage_adder != "BK" &&
+      final_stage_adder != "JSkCond" )
     while(1) {
 
       cout << "1. Ripple Carry Adder " << endl;
@@ -384,6 +386,7 @@ int interact_with_user (int argc, char **argv,
       cout << "3. Ladner-Fischer Adder " << endl;
       cout << "4. Kogge-Stone Adder " << endl;
       cout << "5. Brent-Kung Adder " << endl;
+      cout << "6. J. Sklansky – Conditional Adder " << endl;
 
       cout << "Select Final Stage Adder Algorithm: ";
       cin >> s;
@@ -401,6 +404,9 @@ int interact_with_user (int argc, char **argv,
         break;
       } else if (s.compare ("5") == 0)  {
         final_stage_adder = "BK";
+        break;
+      } else if (s.compare ("6") == 0)  {
+        final_stage_adder = "JSkCond";
         break;
       }
       else
@@ -742,6 +748,8 @@ int create_adder (string final_stage_adder,
     create_ks_adder (adder_size, verilog);
   else if (final_stage_adder.compare ("BK") == 0)
     create_bk_adder (adder_size, verilog);
+   else if (final_stage_adder.compare ("JSkCond") == 0)
+    create_JSkCond_adder (adder_size, verilog);
   else{
     cout << "Bad Final Stage Adder Selection!" << endl;
     return 1;

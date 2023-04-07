@@ -187,7 +187,7 @@ void create_two_result_vectors (std::queue<string>*& main_queue,
 
 void create_finaladder_inst (std::queue<string>*& main_queue,
                              string final_stage_adder,
-                             int out_size,
+                             int out_size, int shift_amount,
                              std::queue<string>& verilog,
                              int& adder_size) {
 
@@ -231,7 +231,8 @@ void create_finaladder_inst (std::queue<string>*& main_queue,
       string cur = "assign result[" + to_string(j) + "] = "
         + main_queue[j].front() + ";";
       main_queue[j].pop();
-      verilog.push(cur);
+      if (j>=shift_amount)
+	verilog.push(cur);
     }
   }
 
@@ -266,9 +267,14 @@ void create_finaladder_inst (std::queue<string>*& main_queue,
 
     verilog.push (fin_inst);
 
-    verilog.push ("assign result[" + to_string(out_size-1) + ":"
-                  + to_string(final_offset) + "] = adder_result[" +
-                  to_string(out_size-1-final_offset) +":0];" );
+    if (shift_amount>final_offset)
+      verilog.push ("assign result[" + to_string(out_size-1) + ":"
+                  + to_string(shift_amount) + "] = adder_result[" +
+                  to_string(out_size-1-final_offset) +":"+to_string(shift_amount-final_offset)+"];" );
+    else
+      verilog.push ("assign result[" + to_string(out_size-1) + ":"
+		    + to_string(final_offset) + "] = adder_result[" +
+		    to_string(out_size-1-final_offset) +":"+to_string(0)+"];" );
   }
 
   adder_size = final_size;
@@ -280,6 +286,7 @@ void create_wallacetree (string** pp_matrix,
                          int pp_dim1,
                          int pp_dim2,
                          int out_size,
+			 int shift_amount,
                          bool create_fin_adder,
                          bool signed_mult,
                          std::queue<string>& verilog,
@@ -359,7 +366,7 @@ void create_wallacetree (string** pp_matrix,
   if (create_fin_adder)
     create_finaladder_inst (main_queue,
                             final_stage_adder,
-                            out_size,
+                            out_size, shift_amount,
                             verilog,
                             adder_size);
   else

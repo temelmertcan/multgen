@@ -119,17 +119,22 @@ int interact_with_user (int argc, char **argv,
                         int& in3_size,
                         int& dot_size,
                         int& out_size,
+			int& shift_amount,
                         bool& signed_mult,
                         bool& ha_fa_with_gates,
                         string& final_stage_adder,
                         string& pp_encoding,
                         string& tree,
-                        string& main_type){
+                        string& main_type,
+			string& file_name_prefix){
 
   if (argc == 1)
     cout << "run ./multgen -help to see more options. " << endl; 
 
-  if (argc > 1 && (strcmp(argv[1], "-help") == 0 || strcmp(argv[1], "-h") == 0)) {
+  if (argc > 1 &&
+      (strcmp(argv[1], "-help") == 0 ||
+       strcmp(argv[1], "-h") == 0 ||
+       strcmp(argv[1], "--help") == 0)) {
     cout << "\nUsers  may  pass  arguments  to  the  program  to  configure  the\n" <<
       "design.  Any configuration  not  selected in  the arguments  will\n" <<
       "start an interactive session to help the user select from allowed\n" <<
@@ -166,6 +171,7 @@ int interact_with_user (int argc, char **argv,
       "  -in2size <arg> : Size of the second operand. <arg> should be a positive integer: \n" <<
       "  -in3size <arg> : Size of the third operand, when relevant. <arg> should be a positive integer: \n" <<
       "  -outsize <arg> : Size of the output. Useful when user wants to truncate the result. <arg> should be a positive integer: \n" <<
+      "  -shift <arg>    : Number of bits that will be dropped from the LSB portion (right shift output). <arg> should be a positive integer: \n" <<
       "  -dotsize <arg> : Determines how many vector pairs should be in the dot product design. <arg> should be a positive integer greater than 1: \n" <<
       endl;
 
@@ -181,9 +187,12 @@ int interact_with_user (int argc, char **argv,
   in3_size = -1;
   dot_size = -1;
   out_size = -1;
+  shift_amount = 0;
   bool in1in2size_is_in_params = false;
   bool out_size_is_in_params = false;
+  bool shift_is_in_params = false;
 
+  file_name_prefix = "";
   main_type = "";
   final_stage_adder = "";
   pp_encoding = "";
@@ -199,7 +208,10 @@ int interact_with_user (int argc, char **argv,
     in3_size = 32;
     dot_size = 8;
     out_size = 50;
-
+    shift_amount = 0;
+    out_size_is_in_params = true;
+   
+    
     main_type = "StandAlone";
     final_stage_adder = "RP";
     pp_encoding = "SB16";
@@ -208,6 +220,9 @@ int interact_with_user (int argc, char **argv,
     signed_mult = (pp_encoding[0] == 'S');
 
   }
+
+  if (argc > 1)
+    shift_is_in_params = true;
 
 
   for (int i = 1; i+1 < argc; i+=2){
@@ -241,9 +256,14 @@ int interact_with_user (int argc, char **argv,
     else if (strcmp(argv[i], "-outsize") == 0){
       sscanf(argv[i+1], "%d", &out_size);
       out_size_is_in_params = true;
+    }else if (strcmp(argv[i], "-shift") == 0){
+      sscanf(argv[i+1], "%d", &shift_amount);
+      shift_is_in_params = true;
     }else if (strcmp(argv[i], "-def") == 0)
       i--;
-    else {
+    else if (strcmp(argv[i], "-filenameprefix") == 0){
+     file_name_prefix = argv[i+1]; 
+    }else {
       cout << "Unrecognized argument: " << argv[i] << endl;
     }
 
@@ -432,19 +452,27 @@ int interact_with_user (int argc, char **argv,
       cin >> in2_size;
     }
 
+    int max_out_size = in1_size+in2_size;
     if (!in1in2size_is_in_params && (out_size < 0 || !out_size_is_in_params)){
-      cout << "Enter Output size (any value less than \""<< in1_size+in2_size << "\" will truncate the result): ";
+      cout << "Enter Output size (any value less than \""<< max_out_size << "\" will truncate the result): ";
       string in = "";
       cin >> in;
       if (std::stringstream(in) >> out_size) {
       }
-      else out_size = in1_size+in2_size;
+      else out_size = max_out_size;
     } else if (in1in2size_is_in_params && (out_size < 0 || !out_size_is_in_params))
-      out_size = in1_size+in2_size;
+      out_size = max_out_size;
+
+    if (out_size > max_out_size || out_size <= 0){
+      cout << "Given out_size is too large. Shrinking to " << max_out_size << endl; 
+      out_size = max_out_size;
+    }
 
   }
 
   if (main_type.compare("MAC") == 0){
+
+    
     if (in1_size < 0){
       cout << "Enter IN1 (Multiplier) size: ";
       cin >> in1_size;
@@ -471,10 +499,16 @@ int interact_with_user (int argc, char **argv,
       }
       else out_size = max_out_size;
 
-      if (out_size > max_out_size)
-        out_size = max_out_size;
     } else if (in1in2size_is_in_params && (out_size < 0 || !out_size_is_in_params))
       out_size = max_out_size;
+
+    if (out_size > max_out_size  || out_size <= 0){
+      cout << "Given out_size is too large. Shrinking to " << max_out_size << endl; 
+      out_size = max_out_size;
+    }
+
+    
+    
   }
 
   if (main_type.compare("FourMult") == 0){
@@ -510,12 +544,14 @@ int interact_with_user (int argc, char **argv,
       }
       else out_size = max_out_size;
 
-      if (out_size > max_out_size){
-        out_size = max_out_size;
-        cout << "Outsize is corrected to " << out_size << endl;
-      }
     } else if (in1in2size_is_in_params && (out_size < 0 || !out_size_is_in_params))
       out_size = max_out_size;
+
+    if (out_size > max_out_size  || out_size <= 0){
+      cout << "Given out_size is too large. Shrinking to " << max_out_size << endl; 
+      out_size = max_out_size;
+    }
+    
   }
 
   if (main_type.compare("DOT") == 0){
@@ -553,11 +589,35 @@ int interact_with_user (int argc, char **argv,
       if (std::stringstream(in) >> out_size) {
       }
       else out_size = max_out_size;
-
-      if (out_size > max_out_size)
-        out_size = max_out_size;
     } else if (in1in2size_is_in_params && (out_size < 0 || !out_size_is_in_params))
       out_size = max_out_size;
+
+    if (out_size > max_out_size  || out_size <= 0){
+      cout << "Given out_size is too large. Shrinking to " << max_out_size << endl; 
+      out_size = max_out_size;
+    }
+
+    
+  }
+
+  if (!shift_is_in_params){
+    cout << "Enter Shift Amount (maximum allowed value is "
+	 << out_size - 1
+	 << "): ";
+    string in = "";
+    cin >> in;
+    if (std::stringstream(in) >> shift_amount) {
+    }
+    else shift_amount = 0;
+  }
+
+  if (shift_amount > out_size - 1 ){
+    cout << "Given shift_amount is too large. Shrinking to " << out_size - 1 << endl;
+    shift_amount = out_size - 1;
+  }
+   if (shift_amount < 0 ){
+    cout << "Given shift_amount is invalid. Setting it to " << out_size - 1 << endl;
+    shift_amount = out_size - 1;
   }
 
   return 0;
@@ -567,6 +627,7 @@ int interact_with_user (int argc, char **argv,
 int create_mult ( int  in1_size,
                   int  in2_size,
                   int  out_size,
+		  int  shift_amount,
                   string final_stage_adder,
                   string pp_encoding,
                   string tree,
@@ -583,10 +644,12 @@ int create_mult ( int  in1_size,
   module_name = tree + "_" + pp_encoding + "_"
     + (create_fin_adder?final_stage_adder + "_" : "")
     + to_string(in1_size) + "x"
-    + to_string(in2_size)
-    + (out_size != (in2_size+in1_size) ? "_" + to_string(out_size) : "" );
-
+    + to_string(in2_size);
+    
   if (create_fin_adder){
+
+    if (shift_amount>0 || out_size!=(in1_size + in2_size))
+      module_name += "_" + to_string(out_size-1) + "to" + to_string(shift_amount);
 
     verilog.push ("// Specification module to help understand what the design implements.");
     verilog.push ("module "+module_name+"_spec (");
@@ -594,15 +657,21 @@ int create_mult ( int  in1_size,
     verilog.push("indent");
     verilog.push ("input logic [" + to_string(in1_size-1) + ":0] IN1,");
     verilog.push ("input logic [" + to_string(in2_size-1) +  ":0] IN2,");
+    verilog.push ("input logic [0:0] IN3, //redundant");
     verilog.push ("output logic design_is_correct, // is set to 1 iff the output of " + module_name + " matches its spec.");
-    verilog.push ("output logic ["  + to_string(out_size-1) +  ":0] design_res,");
-    verilog.push ("output logic ["  + to_string(out_size-1) +  ":0] spec_res);");
+    verilog.push ("output logic ["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"] design_res,");
+    verilog.push ("output logic ["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"] spec_res);");
     verilog.push("outdent");
     verilog.push("");
-    if (pp_encoding[0] == 'S')
-      verilog.push("assign spec_res = signed'(IN1) * signed'(IN2);");
+
+    string signed_str = (pp_encoding[0] == 'S')?"signed'":"unsigned'";
+
+    if (shift_amount>0)
+      verilog.push("assign spec_res["  + to_string(out_size-1) +  ":"+to_string(shift_amount)
+		   +"] = ("+signed_str+"(IN1) * "+signed_str+"(IN2))["
+		   + to_string(out_size-1) +  ":"+to_string(shift_amount)+"];");
     else
-      verilog.push("assign spec_res = IN1 * IN2;");
+      verilog.push("assign spec_res = "+signed_str+"(IN1) * "+signed_str+"(IN2);");
 
     verilog.push(module_name + " mult(IN1, IN2, design_res);");
     verilog.push("assign design_is_correct = ((spec_res == design_res) ? 1 : 0);");
@@ -620,7 +689,7 @@ int create_mult ( int  in1_size,
   verilog.push ("input logic [" + to_string(in1_size - 1) + ":0] IN1," );
   verilog.push ("input logic [" + to_string(in2_size - 1) + ":0] IN2," );
   if (create_fin_adder)
-    verilog.push ("output logic [" + to_string(out_size - 1) + ":0] result);" );
+    verilog.push ("output logic ["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"] result);" );
   else
     {
       verilog.push ("output logic [" + to_string(out_size - 1) + ":0] result0," );
@@ -679,10 +748,10 @@ int create_mult ( int  in1_size,
 
   if (create_fin_adder && !extra_ones_indices.empty()){
 
-    cout << "pp_dim2: " << pp_dim2 << endl;
-    for (auto e : extra_ones_indices)
-      cout << e << " ";
-    cout << endl;
+    // cout << "pp_dim2: " << pp_dim2 << endl;
+    // for (auto e : extra_ones_indices)
+    //   cout << e << " ";
+    // cout << endl;
 
     add_extra_ones_to_pp_matrix (pp_matrix[pp_dim1-1], pp_dim2, extra_ones_indices);
     extra_ones_indices.clear();
@@ -694,7 +763,7 @@ int create_mult ( int  in1_size,
 
   if (tree.compare ("WT") == 0) {
     create_wallacetree (pp_matrix, final_stage_adder, pp_dim1, pp_dim2,
-                        out_size,
+                        out_size, shift_amount,
                         create_fin_adder,
                         signed_mult,
                         verilog,
@@ -703,7 +772,7 @@ int create_mult ( int  in1_size,
 
   } else if (tree.compare ("DT") == 0){
     create_daddatree (pp_matrix, final_stage_adder, pp_dim1, pp_dim2,
-                      out_size,
+                      out_size, shift_amount,
                       create_fin_adder,
                       signed_mult,
                       verilog,
@@ -724,8 +793,8 @@ int create_mult ( int  in1_size,
   cout << "Multiplier Module (" << module_name << ") is created." << endl;
   cout << "   Inputs: IN1[" << in1_size-1 << ":0], IN2[" << in2_size-1 << ":0]" << endl;
   if (create_fin_adder){
-    cout << "   Output: result[" << out_size-1 << ":0]" << endl;
-    cout << "   Function: result = IN1 * IN2 " << (signed_mult?"(signed)":"(unsigned)") << endl;
+    cout << "   Output: result[" << out_size-1 << ":"<< shift_amount <<"]" << endl;
+    cout << "   Function: result = IN1 * IN2" << (shift_amount==0?"":" >> "+to_string(shift_amount)) << (signed_mult?" (signed)":" (unsigned)") << endl;
   }else{
     cout << "   Outputs: result0[" << out_size-1 << ":0], result1[" << out_size-1 << ":0]" << endl;
     cout << "   Function: result0+result1 = partial IN1 * IN2 " << (signed_mult?"(signed)":"(unsigned)") << " without complete sign extension." << endl;
@@ -797,6 +866,7 @@ void print_int(string x, std::list<int> const &list)
 int create_four_mult (int  in_size,
                       int  in3_size,
                       int  out_size,
+		      int  shift_amount,
                       string final_stage_adder,
                       string pp_encoding,
                       string tree,
@@ -818,19 +888,16 @@ int create_four_mult (int  in_size,
 
   std::list<int> extra_ones_indices;
 
-  string FourMultMerger_module_name = "FourMultMerger_"
-    + std::string(signed_mult ? "Signed_" : "Unsigned_")
-    + to_string(in1_size) + "x"
-    + to_string(in2_size)
-    + (in3_size>0 ? "_plus_" + to_string(in3_size) : "")
-    + (out_size != (max(in1_size+in2_size+(in3_size>0?1:0),in3_size+1)) ? "_" + to_string(out_size) : "" );
-
   module_name = "Merged_" + tree + "_" + pp_encoding + "_"
     + final_stage_adder + "_"
     + to_string(in1_size) + "x"
     + to_string(in2_size)
-    + (in3_size>0 ? "_plus_" + to_string(in3_size) : "")
-    + (out_size != (max(in1_size+in2_size+(in3_size>0?1:0),in3_size+1)) ? "_" + to_string(out_size) : "" );
+    + (in3_size>0 ? "_plus_" + to_string(in3_size) : ""); 
+
+  int maxsize = max(in1_size + in2_size + (in3_size>0?1:0), in3_size);
+  
+  if (shift_amount>0 || out_size!=maxsize)
+    module_name += "_" + to_string(out_size-1) + "to" + to_string(shift_amount);
 
   verilog.push ("");
   verilog.push ("// Specification module to help understand what the design implements.");
@@ -841,21 +908,25 @@ int create_four_mult (int  in_size,
   verilog.push ("input logic [" + to_string(in2_size-1) +  ":0] IN2,");
   if (in3_size>0)
     verilog.push ("input logic [" + to_string(in3_size-1) +  ":0] IN3,");
+  else
+    verilog.push ("input logic [0:0] IN3, //redundant");
   verilog.push ("output logic design_is_correct, // is set to 1 iff the output of " + module_name + "  matches its spec.");
-  verilog.push ("output logic ["  + to_string(out_size-1) +  ":0] design_res,");
-  verilog.push ("output logic ["  + to_string(out_size-1) +  ":0] spec_res);");
+    verilog.push ("output logic ["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"] design_res,");
+  verilog.push ("output logic ["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"] spec_res);");
   verilog.push("outdent");
   verilog.push("");
-  if (in3_size > 0)
-    if (signed_mult)
-      verilog.push("assign spec_res = signed'(IN1) * signed'(IN2) + signed'(IN3);");
-    else
-      verilog.push("assign spec_res = IN1 * IN2 + IN3;");
-  else
-    if (signed_mult)
-      verilog.push("assign spec_res = signed'(IN1) * signed'(IN2);");
-    else
-      verilog.push("assign spec_res = IN1 * IN2;");
+
+  string signed_str = (signed_mult?"signed":"unsigned");
+  string in3_str = (in3_size > 0?" + "+signed_str+"'(IN3)":"");
+
+  if (shift_amount>0){
+    verilog.push ("logic ["  + to_string(out_size-1) +  ":0] tmp_spec_res;");
+    verilog.push("assign tmp_spec_res["  + to_string(out_size-1) +  ":0] = "
+		 +signed_str+"'(IN1) * " + signed_str + "'(IN2)" + in3_str + ";");
+    verilog.push ("assign spec_res = tmp_spec_res["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"];");
+  }else
+    verilog.push("assign spec_res = "+signed_str+"'(IN1) * "+signed_str+"'(IN2) "+in3_str+";");
+  
 
   verilog.push(module_name + " mult(IN1, IN2," + (in3_size>0 ? " IN3," : "")+" design_res);");
   verilog.push("assign design_is_correct = ((spec_res == design_res) ? 1 : 0);");
@@ -873,6 +944,7 @@ int create_four_mult (int  in_size,
   int retval = create_mult (one_mult_in_size,
                             one_mult_in_size,
                             one_mult_out_size,
+			    0,
                             "",
                             pp_encoding,
                             tree,
@@ -906,7 +978,7 @@ int create_four_mult (int  in_size,
   verilog.push ("input logic [" + to_string(in2_size - 1) + ":0] IN2," );
   if (in3_size>0)
     verilog.push ("input logic [" + to_string(in3_size - 1) + ":0] IN3," );
-  verilog.push ("output logic [" + to_string(out_size - 1) + ":0] result);" );
+  verilog.push ("output logic ["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"] result);" );
   verilog.push("outdent");
 
   verilog.push ("wire logic [" + to_string(one_mult_out_size-1) + ":0] m1_0;");
@@ -1107,7 +1179,7 @@ int create_four_mult (int  in_size,
                         final_stage_adder,
                         pp_dim1,
                         pp_dim2,
-                        out_size,
+                        out_size, shift_amount,
                         true,
                         signed_mult,
                         verilog,
@@ -1118,7 +1190,7 @@ int create_four_mult (int  in_size,
                       final_stage_adder,
                       pp_dim1,
                       pp_dim2,
-                      out_size,
+                      out_size, shift_amount,
                       true,
                       signed_mult,
                       verilog,
@@ -1139,7 +1211,7 @@ int create_four_mult (int  in_size,
   if (in3_size>0)
     cout << ", IN3[" << in3_size-1 << ":0]";
   cout << endl;
-  cout << "   Output: result[" << out_size-1 << ":0]" << endl;
+  cout << "   Output: result["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"]" << endl;
   if (signed_mult){
     cout << "   Function: result = signed'(IN1) * signed'(IN2) ";
     if (in3_size>0)
@@ -1160,6 +1232,7 @@ int create_mac (int  in1_size,
                 int  in2_size,
                 int  in3_size,
                 int  out_size,
+		int  shift_amount,
                 string final_stage_adder,
                 string pp_encoding,
                 string tree,
@@ -1180,7 +1253,7 @@ int create_mac (int  in1_size,
     + to_string(in1_size) + "x"
     + to_string(in2_size) + "_plus_"
     + to_string(in3_size)
-    + (out_size != max(in2_size+in1_size+1, in3_size+1) ? "_" + to_string(out_size) : "" );
+    + "_" + to_string(out_size-1) + "to" + to_string(shift_amount);
 
   verilog.push ("");
   verilog.push ("// Specification module to help understand what the design implements.");
@@ -1191,14 +1264,17 @@ int create_mac (int  in1_size,
   verilog.push ("input logic [" + to_string(in2_size-1) +  ":0] IN2,");
   verilog.push ("input logic [" + to_string(in3_size-1) +  ":0] IN3,");
   verilog.push ("output logic design_is_correct, // is set to 1 iff the output of " + module_name + "  matches its spec.");
-  verilog.push ("output logic ["  + to_string(out_size-1) +  ":0] design_res,");
-  verilog.push ("output logic ["  + to_string(out_size-1) +  ":0] spec_res);");
+  verilog.push ("output logic ["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"] design_res,");
+  verilog.push ("output logic ["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"] spec_res);");
   verilog.push("outdent");
   verilog.push("");
-  if (signed_mult)
-    verilog.push("assign spec_res = signed'(IN1) * signed'(IN2) + signed'(IN3);");
+  string signed_str = signed_mult ? "signed'" : "unsigned'";
+  if (shift_amount>0)
+    verilog.push("assign spec_res["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"] = ("
+		 +signed_str+"(IN1) * "+signed_str+"(IN2) + "+signed_str+"(IN3))" +
+		 "["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"];");
   else
-    verilog.push("assign spec_res = IN1 * IN2 + IN3;");
+    verilog.push("assign spec_res = "+signed_str+"(IN1) * "+signed_str+"(IN2) + "+signed_str+"(IN3);");
 
   verilog.push(module_name + " mult(IN1, IN2," + (in3_size>0 ? " IN3," : "")+" design_res);");
   verilog.push("assign design_is_correct = ((spec_res == design_res) ? 1 : 0);");
@@ -1216,6 +1292,7 @@ int create_mac (int  in1_size,
   int retval = create_mult (in1_size,
                             in2_size,
                             mult_out_size,
+			    0,
                             "",
                             pp_encoding,
                             tree,
@@ -1237,7 +1314,7 @@ int create_mac (int  in1_size,
   verilog.push("input logic [" + to_string(in1_size - 1) + ":0] IN1," );
   verilog.push("input logic [" + to_string(in2_size - 1) + ":0] IN2," );
   verilog.push("input logic [" + to_string(in3_size - 1) + ":0] IN3," );
-  verilog.push("output logic [" + to_string(out_size - 1) + ":0] result);" );
+  verilog.push("output logic ["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"] result);" );
   verilog.push("outdent");
 
   verilog.push ("wire logic [" + to_string(mult_out_size-1) + ":0] m1_0;");
@@ -1307,7 +1384,7 @@ int create_mac (int  in1_size,
                         final_stage_adder,
                         pp_dim1,
                         pp_dim2,
-                        out_size,
+                        out_size, shift_amount,
                         true,
                         signed_mult,
                         verilog,
@@ -1318,7 +1395,7 @@ int create_mac (int  in1_size,
                       final_stage_adder,
                       pp_dim1,
                       pp_dim2,
-                      out_size,
+                      out_size, shift_amount,
                       true,
                       signed_mult,
                       verilog,
@@ -1338,7 +1415,7 @@ int create_mac (int  in1_size,
   cout << endl;
   cout << "Multiply-Accumulate Module (" << module_name << ") is created." << endl;
   cout << "   Inputs: IN1[" << in1_size-1 << ":0], IN2[" << in2_size-1 << ":0], IN3[" << in3_size-1 << ":0]" << endl;
-  cout << "   Output: result[" << out_size-1 << ":0]" << endl;
+  cout << "   Output: result["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"]" << endl;
   if (signed_mult)
     cout << "   Function: result = signed'(IN1) * signed'(IN2) + signed'(IN3) " << endl;
   else
@@ -1352,6 +1429,7 @@ int create_dot (int  in1_size,
                 int  in3_size,
                 int  dot_size,
                 int  out_size,
+		int  shift_amount,
                 string final_stage_adder,
                 string pp_encoding,
                 string tree,
@@ -1375,8 +1453,7 @@ int create_dot (int  in1_size,
     + to_string(in1_size) + "x"
     + to_string(in2_size)
     + (in3_size>0 ? "_plus_" + to_string(in3_size) : "")
-    + (out_size != min_Out_size
-       ? "_" + to_string(out_size) : "" );
+    + "_" + to_string(out_size-1) + "to" + to_string(shift_amount);
 
   verilog.push ("");
   verilog.push ("// Specification module to help understand what the design implements.");
@@ -1387,21 +1464,24 @@ int create_dot (int  in1_size,
   verilog.push ("input logic [" + to_string(dot_size-1) + ":0][" + to_string(in2_size-1) +  ":0] IN2,");
   verilog.push ("input logic [" + to_string(in3_size-1) +  ":0] IN3,");
   verilog.push ("output logic design_is_correct, // is set to 1 iff the output of " + module_name + "  matches its spec");
-  verilog.push ("output logic ["  + to_string(out_size-1) +  ":0] design_res,");
-  verilog.push ("output logic ["  + to_string(out_size-1) +  ":0] spec_res);");
+  verilog.push ("output logic ["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"] design_res,");
+  verilog.push ("output logic ["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"] spec_res);");
   verilog.push("outdent");
   verilog.push("");
-  if (signed_mult){
-    string x = "assign spec_res = ";
-    for (int i = 0; i<dot_size; i++)
-      x += "(signed'(IN1["+to_string(i)+"]) * signed'(IN2["+to_string(i)+"])) + \n\t\t      ";
-    verilog.push(x + "signed'(IN3);");
-  }else{
-    string x = "assign spec_res = ";
-    for (int i = 0; i<dot_size; i++)
-      x += "(unsigned'(IN1["+to_string(i)+"]) * unsigned'(IN2["+to_string(i)+"])) + \n\t\t      ";
-    verilog.push(x + "unsigned'(IN3);");
-  }
+
+  string signed_str = (signed_mult?"signed'":"unsigned'");
+
+  if (shift_amount>0)
+    verilog.push("logic ["  + to_string(out_size-1) +  ":0] tmp_spec_res;");
+
+  string x = (string)"assign " + ((shift_amount>0)?"tmp_":"") + "spec_res = ";
+  for (int i = 0; i<dot_size; i++)
+    x += "("+signed_str+"(IN1["+to_string(i)+"]) * "+signed_str+"(IN2["+to_string(i)+"])) + \n\t\t      ";
+  verilog.push(x + ""+signed_str+"(IN3);");
+
+  if (shift_amount>0)
+    verilog.push("assign spec_res = tmp_spec_res["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"];");
+
   verilog.push(module_name + " dot_product(IN1, IN2," + (in3_size>0 ? " IN3," : "")+" design_res);");
   verilog.push("assign design_is_correct = ((spec_res == design_res) ? 1 : 0);");
   verilog.push("");
@@ -1416,6 +1496,7 @@ int create_dot (int  in1_size,
   int retval = create_mult (in1_size,
                             in2_size,
                             mult_out_size,
+			    0,
                             "",
                             pp_encoding,
                             tree,
@@ -1441,7 +1522,7 @@ int create_dot (int  in1_size,
 
   if (in3_size>0)
     verilog.push("input logic [" + to_string(in3_size - 1) + ":0] IN3," );
-  verilog.push("output logic [" + to_string(out_size - 1) + ":0] result);" );
+  verilog.push("output logic ["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"] result);" );
   verilog.push("outdent");
   verilog.push("");
 
@@ -1527,7 +1608,7 @@ int create_dot (int  in1_size,
                         final_stage_adder,
                         pp_dim1,
                         pp_dim2,
-                        out_size,
+                        out_size, shift_amount,
                         true,
                         signed_mult,
                         verilog,
@@ -1538,7 +1619,7 @@ int create_dot (int  in1_size,
                       final_stage_adder,
                       pp_dim1,
                       pp_dim2,
-                      out_size,
+                      out_size, shift_amount,
                       true,
                       signed_mult,
                       verilog,
@@ -1564,7 +1645,7 @@ int create_dot (int  in1_size,
   cout << "Dot Product Module (" << module_name << ") is created." << endl;
   cout << "   Inputs: IN1[i][" << in1_size-1 << ":0], IN2[i][" << in2_size-1 << ":0] (i from 0 to "+to_string(dot_size-1)+")" <<
     (in3_size>0?+", IN3[" + to_string(in3_size-1) +  ":0]" :"")  << endl;
-  cout << "   Output: result[" << out_size-1 << ":0]" << endl;
+  cout << "   Output: result["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"]" << endl;
   cout << "   Function: result = IN1[0]*IN2[0] + ... + IN1["+to_string(dot_size-1)+"]*IN2["+to_string(dot_size-1)+
     "] + IN3 " << (signed_mult?"(signed)":"(unsigned)") << endl;
 
@@ -1606,6 +1687,8 @@ int main(int argc, char **argv) {
   int  in3_size;
   int  dot_size;
   int  out_size;
+  int  shift_amount=0;
+  string file_name_prefix = "";
   string final_stage_adder;
   string pp_encoding;
   string tree;
@@ -1614,8 +1697,9 @@ int main(int argc, char **argv) {
   bool ha_fa_with_gates;
   queue<string> verilog;
 
-  int retval = interact_with_user(argc, argv, in1_size, in2_size, in3_size, dot_size, out_size, signed_mult, ha_fa_with_gates, final_stage_adder,
-                                  pp_encoding, tree, main_type);
+  int retval = interact_with_user(argc, argv, in1_size, in2_size, in3_size, dot_size, out_size, shift_amount, signed_mult, ha_fa_with_gates, final_stage_adder,
+                                  pp_encoding, tree, main_type,
+				  file_name_prefix);
 
   if (retval==2)
     return 0;
@@ -1634,7 +1718,7 @@ int main(int argc, char **argv) {
     bool** zeros_in_output = NULL;
 
     retval0 = create_mult(in1_size, in2_size,
-                          out_size,
+                          out_size, shift_amount,
                           final_stage_adder,
                           pp_encoding,
                           tree,
@@ -1647,7 +1731,7 @@ int main(int argc, char **argv) {
   } else if (main_type.compare("FourMult") == 0) {
 
     create_four_mult (in1_size, in3_size,
-                      out_size,
+                      out_size, shift_amount,
                       final_stage_adder,
                       pp_encoding,
                       tree,
@@ -1659,7 +1743,7 @@ int main(int argc, char **argv) {
     create_mac (in1_size,
                 in2_size,
                 in3_size,
-                out_size,
+                out_size, shift_amount,
                 final_stage_adder,
                 pp_encoding,
                 tree,
@@ -1671,7 +1755,7 @@ int main(int argc, char **argv) {
                 in2_size,
                 in3_size,
                 dot_size,
-                out_size,
+                out_size, shift_amount,
                 final_stage_adder,
                 pp_encoding,
                 tree,
@@ -1695,7 +1779,7 @@ int main(int argc, char **argv) {
 
   create_ha_fa (ha_fa_with_gates, verilog);
 
-  string file_name = module_name + "_multgen.sv";
+  string file_name = file_name_prefix + module_name + "_multgen.sv";
   write_to_file(file_name, verilog);
 
   cout << endl;

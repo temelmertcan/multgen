@@ -54,7 +54,7 @@ int get_max_queue_size (std::queue<string>* q, int size);
 
 void create_finaladder_inst (std::queue<string>*& main_queue,
 			     string final_stage_adder,
-			     int out_size,
+			     int out_size, int shift_amount,
 			     std::queue<string>& verilog,
 			     int& adder_size);
 
@@ -71,6 +71,7 @@ void create_wallacetree (string** pp_matrix,
 			 int pp_dim1,
 			 int pp_dim2,
 			 int out_size,
+			 int shift_amount,
 			 bool create_fin_adder,
 			 bool signed_mult,
 			 std::queue<string>& verilog,

@@ -38,21 +38,21 @@
 
 
 // Specification module to help understand what the design implements.
-module MAC_WT_SB8_LF_8x10_plus_6_spec (
+module MAC_WT_SB8_LF_8x10_plus_6_18to0_spec (
         input logic [7:0] IN1,
         input logic [9:0] IN2,
         input logic [5:0] IN3,
-        output logic design_is_correct, // is set to 1 iff the output of MAC_WT_SB8_LF_8x10_plus_6  matches its spec.
+        output logic design_is_correct, // is set to 1 iff the output of MAC_WT_SB8_LF_8x10_plus_6_18to0  matches its spec.
         output logic [18:0] design_res,
         output logic [18:0] spec_res);
     
     assign spec_res = signed'(IN1) * signed'(IN2) + signed'(IN3);
-    MAC_WT_SB8_LF_8x10_plus_6 mult(IN1, IN2, IN3, design_res);
+    MAC_WT_SB8_LF_8x10_plus_6_18to0 mult(IN1, IN2, IN3, design_res);
     assign design_is_correct = ((spec_res == design_res) ? 1 : 0);
     
 endmodule
 
-module WT_SB8_8x10_19(
+module WT_SB8_8x10(
         input logic [7:0] IN1,
         input logic [9:0] IN2,
         output logic [18:0] result0,
@@ -75,7 +75,9 @@ module WT_SB8_8x10_19(
     assign mcand_4x = {{0{mcand[9]}},  mcand, 2'b0};
     
     // Booth Radix-8 Partial Products. Multiplier selectors: mult[2] mult[1] mult[0] 1'b0
-    wire logic select_e_0, select_2x_0, select_3x_0, select_4x_0, tcomp0, select_ne_0, select_n2x_0, select_n3x_0, select_n4x_0;
+    wire logic select_0_0, select_e_0, select_2x_0, select_3x_0, select_4x_0, tcomp0, select_ne_0, select_n2x_0, select_n3x_0, select_n4x_0;
+    assign select_0_0 =  &{mult[2], mult[1], mult[0], 1'b0} | ~|{mult[2], mult[1], mult[0], 1'b0};
+    assign select_e_0 = ((~ mult[2]) & (~ mult[1]) & (mult[0] ^ 1'b0));
     assign select_e_0 = ((~ mult[2]) & (~ mult[1]) & (mult[0] ^ 1'b0));
     assign select_ne_0 = mult[2] & mult[1] &  (mult[0] ^ 1'b0);
     assign select_2x_0 = (~ mult[2]) & (mult[1] ^ mult[0])& (mult[1] ^ 1'b0);
@@ -84,20 +86,27 @@ module WT_SB8_8x10_19(
     assign select_n3x_0 = (mult[2] & ~mult[1] & (mult[0] ^ 1'b0));
     assign select_4x_0 = ~mult[2] & mult[1] & mult[0] & 1'b0;
     assign select_n4x_0 = mult[2] & ~mult[1] & ~mult[0] & ~1'b0;
-    wire [11:0] pp_0;
-    assign pp_0 = (1<<11) ^ // flip the MSB 
-                   ((select_e_0 ? mcand_1x : 0) | 
-                    (select_2x_0 ? mcand_2x : 0) | 
-                    (select_3x_0 ? mcand_3x : 0) | 
-                    (select_4x_0 ? mcand_4x : 0) | 
-                    (select_n4x_0 ? (~ mcand_4x) : 0) | 
-                    (select_n3x_0 ? (~ mcand_3x) : 0) | 
-                    (select_n2x_0 ? (~ mcand_2x) : 0) | 
-                    (select_ne_0 ? (~ mcand_1x) : 0)); 
+    reg [11:0] pp_0;
+    always @(*) begin
+       case (1'b1)
+          select_0_0   : pp_0 = 0; 
+          select_e_0   : pp_0 = mcand_1x; 
+          select_2x_0  : pp_0 = mcand_2x; 
+          select_3x_0  : pp_0 = mcand_3x; 
+          select_4x_0  : pp_0 = mcand_4x; 
+          select_n4x_0 : pp_0 = (~ mcand_4x); 
+          select_n3x_0 : pp_0 = (~ mcand_3x); 
+          select_n2x_0 : pp_0 = (~ mcand_2x); 
+          select_ne_0  : pp_0 = (~ mcand_1x); 
+       endcase 
+       pp_0[11] = ~pp_0[11]; // flip the MSB 
+    end
     assign tcomp0 = select_ne_0 | select_n4x_0 | select_n3x_0 | select_n2x_0;
     
     // Booth Radix-8 Partial Products. Multiplier selectors: mult[5] mult[4] mult[3] mult[2]
-    wire logic select_e_1, select_2x_1, select_3x_1, select_4x_1, tcomp1, select_ne_1, select_n2x_1, select_n3x_1, select_n4x_1;
+    wire logic select_0_1, select_e_1, select_2x_1, select_3x_1, select_4x_1, tcomp1, select_ne_1, select_n2x_1, select_n3x_1, select_n4x_1;
+    assign select_0_1 =  &{mult[5], mult[4], mult[3], mult[2]} | ~|{mult[5], mult[4], mult[3], mult[2]};
+    assign select_e_1 = ((~ mult[5]) & (~ mult[4]) & (mult[3] ^ mult[2]));
     assign select_e_1 = ((~ mult[5]) & (~ mult[4]) & (mult[3] ^ mult[2]));
     assign select_ne_1 = mult[5] & mult[4] &  (mult[3] ^ mult[2]);
     assign select_2x_1 = (~ mult[5]) & (mult[4] ^ mult[3])& (mult[4] ^ mult[2]);
@@ -106,20 +115,27 @@ module WT_SB8_8x10_19(
     assign select_n3x_1 = (mult[5] & ~mult[4] & (mult[3] ^ mult[2]));
     assign select_4x_1 = ~mult[5] & mult[4] & mult[3] & mult[2];
     assign select_n4x_1 = mult[5] & ~mult[4] & ~mult[3] & ~mult[2];
-    wire [11:0] pp_1;
-    assign pp_1 = (1<<11) ^ // flip the MSB 
-                   ((select_e_1 ? mcand_1x : 0) | 
-                    (select_2x_1 ? mcand_2x : 0) | 
-                    (select_3x_1 ? mcand_3x : 0) | 
-                    (select_4x_1 ? mcand_4x : 0) | 
-                    (select_n4x_1 ? (~ mcand_4x) : 0) | 
-                    (select_n3x_1 ? (~ mcand_3x) : 0) | 
-                    (select_n2x_1 ? (~ mcand_2x) : 0) | 
-                    (select_ne_1 ? (~ mcand_1x) : 0)); 
+    reg [11:0] pp_1;
+    always @(*) begin
+       case (1'b1)
+          select_0_1   : pp_1 = 0; 
+          select_e_1   : pp_1 = mcand_1x; 
+          select_2x_1  : pp_1 = mcand_2x; 
+          select_3x_1  : pp_1 = mcand_3x; 
+          select_4x_1  : pp_1 = mcand_4x; 
+          select_n4x_1 : pp_1 = (~ mcand_4x); 
+          select_n3x_1 : pp_1 = (~ mcand_3x); 
+          select_n2x_1 : pp_1 = (~ mcand_2x); 
+          select_ne_1  : pp_1 = (~ mcand_1x); 
+       endcase 
+       pp_1[11] = ~pp_1[11]; // flip the MSB 
+    end
     assign tcomp1 = select_ne_1 | select_n4x_1 | select_n3x_1 | select_n2x_1;
     
     // Booth Radix-8 Partial Products. Multiplier selectors: mult[7] mult[7] mult[6] mult[5]
-    wire logic select_e_2, select_2x_2, select_3x_2, select_4x_2, tcomp2, select_ne_2, select_n2x_2, select_n3x_2, select_n4x_2;
+    wire logic select_0_2, select_e_2, select_2x_2, select_3x_2, select_4x_2, tcomp2, select_ne_2, select_n2x_2, select_n3x_2, select_n4x_2;
+    assign select_0_2 =  &{mult[7], mult[7], mult[6], mult[5]} | ~|{mult[7], mult[7], mult[6], mult[5]};
+    assign select_e_2 = ((~ mult[7]) & (~ mult[7]) & (mult[6] ^ mult[5]));
     assign select_e_2 = ((~ mult[7]) & (~ mult[7]) & (mult[6] ^ mult[5]));
     assign select_ne_2 = mult[7] & mult[7] &  (mult[6] ^ mult[5]);
     assign select_2x_2 = (~ mult[7]) & (mult[7] ^ mult[6])& (mult[7] ^ mult[5]);
@@ -128,16 +144,21 @@ module WT_SB8_8x10_19(
     assign select_n3x_2 = (mult[7] & ~mult[7] & (mult[6] ^ mult[5]));
     assign select_4x_2 = ~mult[7] & mult[7] & mult[6] & mult[5];
     assign select_n4x_2 = mult[7] & ~mult[7] & ~mult[6] & ~mult[5];
-    wire [11:0] pp_2;
-    assign pp_2 = (1<<11) ^ // flip the MSB 
-                   ((select_e_2 ? mcand_1x : 0) | 
-                    (select_2x_2 ? mcand_2x : 0) | 
-                    (select_3x_2 ? mcand_3x : 0) | 
-                    (select_4x_2 ? mcand_4x : 0) | 
-                    (select_n4x_2 ? (~ mcand_4x) : 0) | 
-                    (select_n3x_2 ? (~ mcand_3x) : 0) | 
-                    (select_n2x_2 ? (~ mcand_2x) : 0) | 
-                    (select_ne_2 ? (~ mcand_1x) : 0)); 
+    reg [11:0] pp_2;
+    always @(*) begin
+       case (1'b1)
+          select_0_2   : pp_2 = 0; 
+          select_e_2   : pp_2 = mcand_1x; 
+          select_2x_2  : pp_2 = mcand_2x; 
+          select_3x_2  : pp_2 = mcand_3x; 
+          select_4x_2  : pp_2 = mcand_4x; 
+          select_n4x_2 : pp_2 = (~ mcand_4x); 
+          select_n3x_2 : pp_2 = (~ mcand_3x); 
+          select_n2x_2 : pp_2 = (~ mcand_2x); 
+          select_ne_2  : pp_2 = (~ mcand_1x); 
+       endcase 
+       pp_2[11] = ~pp_2[11]; // flip the MSB 
+    end
     assign tcomp2 = select_ne_2 | select_n4x_2 | select_n3x_2 | select_n2x_2;
     
     // The values to be summed in the summation tree, from LSB (left) to MSB:
@@ -219,14 +240,14 @@ endmodule
 
 
 
-module MAC_WT_SB8_LF_8x10_plus_6(
+module MAC_WT_SB8_LF_8x10_plus_6_18to0(
         input logic [7:0] IN1,
         input logic [9:0] IN2,
         input logic [5:0] IN3,
         output logic [18:0] result);
     wire logic [18:0] m1_0;
     wire logic [18:0] m1_1;
-    WT_SB8_8x10_19 m1 (IN1[7:0], IN2[9:0], m1_0, m1_1);
+    WT_SB8_8x10 m1 (IN1[7:0], IN2[9:0], m1_0, m1_1);
     
     
     // The values to be summed in the summation tree, from LSB (left) to MSB:
@@ -325,6 +346,9 @@ module LF_17 (
     wire logic [16:0] g_0;
     assign g_0 = IN1 & IN2;
     assign p_0 = IN1 ^ IN2;
+    
+// Ladner-Fischer Adder 
+
     
     // LF stage 1
     wire logic p_1_1;

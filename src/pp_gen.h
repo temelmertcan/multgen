@@ -66,11 +66,6 @@ void create_unsignedpp (int m, int n,
 			int& pp_dim2,
 			std::queue<string>& verilog);
 
-void create_signedbr4pp (int m, int n,
-			string**& pp_matrix,
-			int& pp_dim1,
-			int& pp_dim2,
-			 std::queue<string>& verilog);
 
 void create_br2pp (int m, int n, bool signed_mul,
                    string**& pp_matrix,
@@ -99,31 +94,3 @@ void create_br16pp (int m, int n, bool signed_mul,
 		    int& pp_dim2,
 		    std::list<int>& extra_ones_indices,
 		    std::queue<string>& verilog);
-
-void create_unsignedbr4pp (int m, int n,
-			   string**& pp_matrix,
-			   int& pp_dim1,
-			   int& pp_dim2,
-			   std::queue<string>& verilog);
-
-
-
-void create_signedbr2pp (int m, int n,
-			string**& pp_matrix,
-			int& pp_dim1,
-			int& pp_dim2,
-			 std::queue<string>& verilog);
-
-void create_unsignedbr2pp (int m, int n,
-			   string**& pp_matrix,
-			   int& pp_dim1,
-			   int& pp_dim2,
-			   std::queue<string>& verilog);
-
-
-
-void create_unsignedbr2pp (int m, int n,
-			   string**& pp_matrix,
-			   int& pp_dim1,
-			   int& pp_dim2,
-			   std::queue<string>& verilog);

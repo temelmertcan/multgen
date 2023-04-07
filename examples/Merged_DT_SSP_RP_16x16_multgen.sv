@@ -45,7 +45,7 @@ module Merged_DT_SSP_RP_16x16_spec (
         output logic [31:0] design_res,
         output logic [31:0] spec_res);
     
-    assign spec_res = signed'(IN1) * signed'(IN2);
+    assign spec_res = signed'(IN1) * signed'(IN2) ;
     Merged_DT_SSP_RP_16x16 mult(IN1, IN2, design_res);
     assign design_is_correct = ((spec_res == design_res) ? 1 : 0);
     
@@ -53,7 +53,7 @@ endmodule
 
 
 
-module DT_SSP_9x9_32(
+module DT_SSP_9x9(
         input logic [8:0] IN1,
         input logic [8:0] IN2,
         output logic [31:0] result0,
@@ -268,10 +268,10 @@ module Merged_DT_SSP_RP_16x16(
     wire logic [31:0] m4_0;
     wire logic [31:0] m4_1;
     
-    DT_SSP_9x9_32 m1 ({1'b0, IN1[7:0]}, {1'b0, IN2[7:0]}, m1_0, m1_1);
-    DT_SSP_9x9_32 m2 ({IN2[15], IN2[15:8]}, {1'b0, IN1[7:0]}, m2_0, m2_1);
-    DT_SSP_9x9_32 m3 ({IN1[15], IN1[15:8]}, {1'b0, IN2[7:0]}, m3_0, m3_1);
-    DT_SSP_9x9_32 m4 ({IN1[15],IN1[15:8]}, {IN2[15], IN2[15:8]}, m4_0, m4_1);
+    DT_SSP_9x9 m1 ({1'b0, IN1[7:0]}, {1'b0, IN2[7:0]}, m1_0, m1_1);
+    DT_SSP_9x9 m2 ({IN2[15], IN2[15:8]}, {1'b0, IN1[7:0]}, m2_0, m2_1);
+    DT_SSP_9x9 m3 ({IN1[15], IN1[15:8]}, {1'b0, IN2[7:0]}, m3_0, m3_1);
+    DT_SSP_9x9 m4 ({IN1[15],IN1[15:8]}, {IN2[15], IN2[15:8]}, m4_0, m4_1);
     
     
     // The values to be summed in the summation tree, from LSB (left) to MSB:

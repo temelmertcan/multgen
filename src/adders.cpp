@@ -450,6 +450,9 @@ void create_bk_adder (int size, std::queue<string>& verilog){
   verilog.push("");
   verilog.push("// BK Step 2: group pairs from far to close ");
 
+  if (coef < size)
+    coef *= 2;
+
   for (coef = coef/4; coef >= 1; coef = coef/2){
     verilog.push("");
     verilog.push("// Stage " + to_string(++stage)+ " - pairs that are " + to_string(coef) + " index apart.");
@@ -506,7 +509,7 @@ void create_JSkCond_adder (int size, std::queue<string>& verilog){
 
   int stage=0;
 
-  // bk first
+  
   unsigned long long coef;
   for (coef = 1; coef < size; coef *= 2){
     verilog.push("");

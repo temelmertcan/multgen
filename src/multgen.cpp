@@ -1462,7 +1462,7 @@ int create_dot (int  in1_size,
   verilog.push("indent");
   verilog.push ("input logic [" + to_string(dot_size-1) + ":0][" + to_string(in1_size-1) + ":0] IN1,");
   verilog.push ("input logic [" + to_string(dot_size-1) + ":0][" + to_string(in2_size-1) +  ":0] IN2,");
-  verilog.push ("input logic [" + to_string(in3_size-1) +  ":0] IN3,");
+  verilog.push ("input logic [" + to_string(in3_size>0?in3_size-1:0) +  ":0] IN3,");
   verilog.push ("output logic design_is_correct, // is set to 1 iff the output of " + module_name + "  matches its spec");
   verilog.push ("output logic ["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"] design_res,");
   verilog.push ("output logic ["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"] spec_res);");
@@ -1477,7 +1477,10 @@ int create_dot (int  in1_size,
   string x = (string)"assign " + ((shift_amount>0)?"tmp_":"") + "spec_res = ";
   for (int i = 0; i<dot_size; i++)
     x += "("+signed_str+"(IN1["+to_string(i)+"]) * "+signed_str+"(IN2["+to_string(i)+"])) + \n\t\t      ";
-  verilog.push(x + ""+signed_str+"(IN3);");
+  if (in3_size>0)
+    verilog.push(x + ""+signed_str+"(IN3);");
+  else
+    verilog.push(x + "0;");
 
   if (shift_amount>0)
     verilog.push("assign spec_res = tmp_spec_res["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"];");

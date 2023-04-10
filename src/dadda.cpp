@@ -107,6 +107,7 @@ void create_daddatree (string** pp_matrix,
   std::queue<string>* temp_queue = new std::queue<string>[out_size];
 
   // create the initial queue
+  //for (int i = pp_dim1; i >= 0; i--)
   for (int i = 0; i < pp_dim1; i++)
     for (int j = 0; j < pp_dim2 && j< out_size; j++)
       if (pp_matrix[i][j] != "")

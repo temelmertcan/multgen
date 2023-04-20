@@ -71,13 +71,12 @@ module WT_SB8_8x10(
     wire [11:0] mcand_4x;
     assign mcand_1x = {{2{mcand[9]}},  mcand};
     assign mcand_2x = {{1{mcand[9]}},  mcand, 1'b0};
-    assign mcand_3x = mcand_1x + mcand_2x;
+    LF_12 calc_mcand_3x (1'b0, mcand_1x, mcand_2x, mcand_3x);
     assign mcand_4x = {{0{mcand[9]}},  mcand, 2'b0};
     
     // Booth Radix-8 Partial Products. Multiplier selectors: mult[2] mult[1] mult[0] 1'b0
     wire logic select_0_0, select_e_0, select_2x_0, select_3x_0, select_4x_0, tcomp0, select_ne_0, select_n2x_0, select_n3x_0, select_n4x_0;
     assign select_0_0 =  &{mult[2], mult[1], mult[0], 1'b0} | ~|{mult[2], mult[1], mult[0], 1'b0};
-    assign select_e_0 = ((~ mult[2]) & (~ mult[1]) & (mult[0] ^ 1'b0));
     assign select_e_0 = ((~ mult[2]) & (~ mult[1]) & (mult[0] ^ 1'b0));
     assign select_ne_0 = mult[2] & mult[1] &  (mult[0] ^ 1'b0);
     assign select_2x_0 = (~ mult[2]) & (mult[1] ^ mult[0])& (mult[1] ^ 1'b0);
@@ -107,7 +106,6 @@ module WT_SB8_8x10(
     wire logic select_0_1, select_e_1, select_2x_1, select_3x_1, select_4x_1, tcomp1, select_ne_1, select_n2x_1, select_n3x_1, select_n4x_1;
     assign select_0_1 =  &{mult[5], mult[4], mult[3], mult[2]} | ~|{mult[5], mult[4], mult[3], mult[2]};
     assign select_e_1 = ((~ mult[5]) & (~ mult[4]) & (mult[3] ^ mult[2]));
-    assign select_e_1 = ((~ mult[5]) & (~ mult[4]) & (mult[3] ^ mult[2]));
     assign select_ne_1 = mult[5] & mult[4] &  (mult[3] ^ mult[2]);
     assign select_2x_1 = (~ mult[5]) & (mult[4] ^ mult[3])& (mult[4] ^ mult[2]);
     assign select_n2x_1 = mult[5] & (mult[4] ^ mult[3])& (mult[4] ^ mult[2]);
@@ -135,7 +133,6 @@ module WT_SB8_8x10(
     // Booth Radix-8 Partial Products. Multiplier selectors: mult[7] mult[7] mult[6] mult[5]
     wire logic select_0_2, select_e_2, select_2x_2, select_3x_2, select_4x_2, tcomp2, select_ne_2, select_n2x_2, select_n3x_2, select_n4x_2;
     assign select_0_2 =  &{mult[7], mult[7], mult[6], mult[5]} | ~|{mult[7], mult[7], mult[6], mult[5]};
-    assign select_e_2 = ((~ mult[7]) & (~ mult[7]) & (mult[6] ^ mult[5]));
     assign select_e_2 = ((~ mult[7]) & (~ mult[7]) & (mult[6] ^ mult[5]));
     assign select_ne_2 = mult[7] & mult[7] &  (mult[6] ^ mult[5]);
     assign select_2x_2 = (~ mult[7]) & (mult[7] ^ mult[6])& (mult[7] ^ mult[5]);
@@ -236,6 +233,141 @@ module WT_SB8_8x10(
     assign result1[17:2] = {1'b0, c25, s25, s24, s23, s22, s21, s20, s19, s18, s17, s16, s15, 1'b0, 1'b0, c13 };
     assign result0[18] = 1'b0;
     assign result1[18] = 1'b0;
+endmodule
+
+
+
+module LF_12 ( 
+        input logic carryin,
+        input logic [11:0] IN1,
+        input logic [11:0] IN2,
+        output logic [12:0] OUT);
+    
+    wire logic [11:0] p_0;
+    wire logic [11:0] g_0;
+    assign g_0[11:1] = IN1[11:1] & IN2[11:1];
+    assign p_0[11:1] = IN1[11:1] ^ IN2[11:1];
+    fa m0 (carryin, IN1[0], IN2[0], p_0[0], g_0[0]);
+    
+// Ladner-Fischer Adder 
+
+    
+    // LF stage 1
+    wire logic p_1_1;
+    wire logic g_1_1;
+    assign p_1_1 = p_0[1] & p_0[0];
+    assign g_1_1 = (p_0[1] & g_0[0]) | g_0[1];
+    wire logic p_1_3;
+    wire logic g_1_3;
+    assign p_1_3 = p_0[3] & p_0[2];
+    assign g_1_3 = (p_0[3] & g_0[2]) | g_0[3];
+    wire logic p_1_5;
+    wire logic g_1_5;
+    assign p_1_5 = p_0[5] & p_0[4];
+    assign g_1_5 = (p_0[5] & g_0[4]) | g_0[5];
+    wire logic p_1_7;
+    wire logic g_1_7;
+    assign p_1_7 = p_0[7] & p_0[6];
+    assign g_1_7 = (p_0[7] & g_0[6]) | g_0[7];
+    wire logic p_1_9;
+    wire logic g_1_9;
+    assign p_1_9 = p_0[9] & p_0[8];
+    assign g_1_9 = (p_0[9] & g_0[8]) | g_0[9];
+    wire logic p_1_11;
+    wire logic g_1_11;
+    assign p_1_11 = p_0[11] & p_0[10];
+    assign g_1_11 = (p_0[11] & g_0[10]) | g_0[11];
+    
+    // LF stage 2
+    wire logic p_2_2;
+    wire logic g_2_2;
+    assign p_2_2 = p_0[2] & p_1_1;
+    assign g_2_2 = (p_0[2] & g_1_1) | g_0[2];
+    wire logic p_2_3;
+    wire logic g_2_3;
+    assign p_2_3 = p_1_3 & p_1_1;
+    assign g_2_3 = (p_1_3 & g_1_1) | g_1_3;
+    wire logic p_2_6;
+    wire logic g_2_6;
+    assign p_2_6 = p_0[6] & p_1_5;
+    assign g_2_6 = (p_0[6] & g_1_5) | g_0[6];
+    wire logic p_2_7;
+    wire logic g_2_7;
+    assign p_2_7 = p_1_7 & p_1_5;
+    assign g_2_7 = (p_1_7 & g_1_5) | g_1_7;
+    wire logic p_2_10;
+    wire logic g_2_10;
+    assign p_2_10 = p_0[10] & p_1_9;
+    assign g_2_10 = (p_0[10] & g_1_9) | g_0[10];
+    wire logic p_2_11;
+    wire logic g_2_11;
+    assign p_2_11 = p_1_11 & p_1_9;
+    assign g_2_11 = (p_1_11 & g_1_9) | g_1_11;
+    
+    // LF stage 3
+    wire logic p_3_4;
+    wire logic g_3_4;
+    assign p_3_4 = p_0[4] & p_2_3;
+    assign g_3_4 = (p_0[4] & g_2_3) | g_0[4];
+    wire logic p_3_5;
+    wire logic g_3_5;
+    assign p_3_5 = p_1_5 & p_2_3;
+    assign g_3_5 = (p_1_5 & g_2_3) | g_1_5;
+    wire logic p_3_6;
+    wire logic g_3_6;
+    assign p_3_6 = p_2_6 & p_2_3;
+    assign g_3_6 = (p_2_6 & g_2_3) | g_2_6;
+    wire logic p_3_7;
+    wire logic g_3_7;
+    assign p_3_7 = p_2_7 & p_2_3;
+    assign g_3_7 = (p_2_7 & g_2_3) | g_2_7;
+    
+    // LF stage 4
+    wire logic p_4_8;
+    wire logic g_4_8;
+    assign p_4_8 = p_0[8] & p_3_7;
+    assign g_4_8 = (p_0[8] & g_3_7) | g_0[8];
+    wire logic p_4_9;
+    wire logic g_4_9;
+    assign p_4_9 = p_1_9 & p_3_7;
+    assign g_4_9 = (p_1_9 & g_3_7) | g_1_9;
+    wire logic p_4_10;
+    wire logic g_4_10;
+    assign p_4_10 = p_2_10 & p_3_7;
+    assign g_4_10 = (p_2_10 & g_3_7) | g_2_10;
+    wire logic p_4_11;
+    wire logic g_4_11;
+    assign p_4_11 = p_2_11 & p_3_7;
+    assign g_4_11 = (p_2_11 & g_3_7) | g_2_11;
+    
+    // LF postprocess 
+    assign OUT[0] = p_0[0];
+    assign OUT[1] = p_0[1] ^ g_0[0];
+    assign OUT[2] = p_0[2] ^ g_1_1;
+    assign OUT[3] = p_0[3] ^ g_2_2;
+    assign OUT[4] = p_0[4] ^ g_2_3;
+    assign OUT[5] = p_0[5] ^ g_3_4;
+    assign OUT[6] = p_0[6] ^ g_3_5;
+    assign OUT[7] = p_0[7] ^ g_3_6;
+    assign OUT[8] = p_0[8] ^ g_3_7;
+    assign OUT[9] = p_0[9] ^ g_4_8;
+    assign OUT[10] = p_0[10] ^ g_4_9;
+    assign OUT[11] = p_0[11] ^ g_4_10;
+    assign OUT[12] = g_4_11;
+endmodule
+
+module LF_12_spec (
+        input logic carryin,
+        input logic [11:0] IN1,
+        input logic [11:0] IN2,
+        output logic adder_correct,
+        output logic [12:0] spec_res);
+    
+    assign spec_res = IN1 + IN2 + carryin;
+    wire [12:0] adder_res;
+    LF_12 adder(carryin, IN1, IN2, adder_res);
+    assign adder_correct = ((spec_res == adder_res) ? 1 : 0);
+    
 endmodule
 
 

@@ -624,6 +624,60 @@ int interact_with_user (int argc, char **argv,
 
 }
 
+
+int create_adder (string final_stage_adder,
+                  bool carryin, int adder_size,
+                  queue<string>& verilog){
+
+  if (final_stage_adder.compare ("RP") == 0)
+    create_rp_adder (adder_size, carryin, verilog);
+  else if (final_stage_adder.compare ("HC") == 0)
+    create_hc_adder (adder_size, carryin, verilog);
+  else if (final_stage_adder.compare ("LF") == 0)
+    create_lf_adder (adder_size, carryin, verilog);
+  else if (final_stage_adder.compare ("KS") == 0)
+    create_ks_adder (adder_size, carryin, verilog);
+  else if (final_stage_adder.compare ("BK") == 0)
+    create_bk_adder (adder_size, carryin, verilog);
+   else if (final_stage_adder.compare ("JSkCond") == 0)
+     create_JSkCond_adder (adder_size, carryin, verilog);
+  else{
+    cout << "Bad Final Stage Adder Selection!" << endl;
+    return 1;
+  }
+
+  verilog.push ("module "+final_stage_adder+"_"+to_string(adder_size)+"_spec (");
+  verilog.push("indent");
+  verilog.push("indent");
+  if(carryin)
+    verilog.push ("input logic carryin,");
+  verilog.push ("input logic [" + to_string(adder_size-1) + ":0] IN1,");
+  verilog.push ("input logic [" + to_string(adder_size-1) +  ":0] IN2,");
+  verilog.push ("output logic adder_correct,");
+  verilog.push ("output logic ["  + to_string(adder_size) +  ":0] spec_res);");
+  verilog.push("outdent");
+  verilog.push("");
+  verilog.push((string)"assign spec_res = IN1 + IN2" + (string)(carryin?" + carryin;":";"));
+  verilog.push("wire ["  + to_string(adder_size) +  ":0] adder_res;");
+  verilog.push(final_stage_adder+"_"+to_string(adder_size) + " adder("+(carryin?"carryin, ":"")+"IN1, IN2, adder_res);");
+  verilog.push("assign adder_correct = ((spec_res == adder_res) ? 1 : 0);");
+  verilog.push("");
+  verilog.push("outdent");
+  verilog.push ("endmodule");
+  verilog.push("");
+
+  verilog.push ("\n");
+
+  cout << endl;
+  cout << "Adder Module (" << final_stage_adder << "_" << adder_size << ") is created." << endl;
+  cout << "   Inputs: IN1[" << adder_size-1 << ":0], IN2[" << adder_size-1 << ":0]" << (carryin?", carryin":"")<< endl;
+  cout << "   Output: result[" <<adder_size << ":0]" << endl;
+  cout << "   Function: result=IN1 + IN2" << (carryin?" + carryin":"") << endl;
+
+  return 0;
+
+}
+
 int create_mult ( int  in1_size,
                   int  in2_size,
                   int  out_size,
@@ -666,11 +720,13 @@ int create_mult ( int  in1_size,
 
     string signed_str = (pp_encoding[0] == 'S')?"signed'":"unsigned'";
 
-    if (shift_amount>0)
+    if (shift_amount>0){
+      verilog.push("wire logic [" + to_string(out_size-1) + ":0] tmp_spec_res;");
+      verilog.push("assign tmp_spec_res = "+signed_str+"(IN1) * "+signed_str+"(IN2);");
       verilog.push("assign spec_res["  + to_string(out_size-1) +  ":"+to_string(shift_amount)
-		   +"] = ("+signed_str+"(IN1) * "+signed_str+"(IN2))["
-		   + to_string(out_size-1) +  ":"+to_string(shift_amount)+"];");
-    else
+		   +"] =  tmp_spec_res["  + to_string(out_size-1) +  ":"+to_string(shift_amount)
+		   +"];");
+    }else
       verilog.push("assign spec_res = "+signed_str+"(IN1) * "+signed_str+"(IN2);");
 
     verilog.push(module_name + " mult(IN1, IN2, design_res);");
@@ -700,7 +756,8 @@ int create_mult ( int  in1_size,
 
   verilog.push("\n// Creating Partial Products \n");
 
-    bool signed_mult = (pp_encoding[0] == 'S');
+  bool signed_mult = (pp_encoding[0] == 'S');
+  int pp_adder_size = 0;
 
   if (pp_encoding.compare ("USP") == 0) {
     create_unsignedpp (in1_size, in2_size, pp_matrix,
@@ -716,16 +773,20 @@ int create_mult ( int  in1_size,
     //                     pp_dim1, pp_dim2, verilog);
   } else if (pp_encoding.compare ("SB8") == 0) {
     create_br8pp (in1_size, in2_size, true, pp_matrix,
-                  pp_dim1, pp_dim2, extra_ones_indices, verilog);
+                  pp_dim1, pp_dim2, extra_ones_indices,
+		  final_stage_adder, pp_adder_size, verilog);
   } else if (pp_encoding.compare ("UB8") == 0) {
     create_br8pp (in1_size, in2_size, false, pp_matrix,
-                  pp_dim1, pp_dim2, extra_ones_indices, verilog);
+                  pp_dim1, pp_dim2, extra_ones_indices,
+		  final_stage_adder, pp_adder_size, verilog);
   } else if (pp_encoding.compare ("SB16") == 0) {
     create_br16pp (in1_size, in2_size, true, pp_matrix,
-                   pp_dim1, pp_dim2, extra_ones_indices, verilog);
+                   pp_dim1, pp_dim2, extra_ones_indices,
+		   final_stage_adder, pp_adder_size, verilog);
   }  else if (pp_encoding.compare ("UB16") == 0) {
     create_br16pp (in1_size, in2_size, false, pp_matrix,
-                   pp_dim1, pp_dim2, extra_ones_indices, verilog);
+                   pp_dim1, pp_dim2, extra_ones_indices,
+		   final_stage_adder, pp_adder_size, verilog);
   } else if (pp_encoding.compare ("SB2") == 0) {
     create_br2pp (in1_size, in2_size, true, pp_matrix,
                   pp_dim1, pp_dim2, extra_ones_indices, verilog);
@@ -799,60 +860,15 @@ int create_mult ( int  in1_size,
     cout << "   Outputs: result0[" << out_size-1 << ":0], result1[" << out_size-1 << ":0]" << endl;
     cout << "   Function: result0+result1 = partial IN1 * IN2 " << (signed_mult?"(signed)":"(unsigned)") << " without complete sign extension." << endl;
   }
+
+
+  if (pp_adder_size>0)
+    create_adder (final_stage_adder, true, pp_adder_size, verilog);
+    
   return 0;
 
 }
 
-int create_adder (string final_stage_adder,
-                  int adder_size,
-                  queue<string>& verilog){
-
-  if (final_stage_adder.compare ("RP") == 0)
-    create_rp_adder (adder_size, verilog);
-  else if (final_stage_adder.compare ("HC") == 0)
-    create_hc_adder (adder_size, verilog);
-  else if (final_stage_adder.compare ("LF") == 0)
-    create_lf_adder (adder_size, verilog);
-  else if (final_stage_adder.compare ("KS") == 0)
-    create_ks_adder (adder_size, verilog);
-  else if (final_stage_adder.compare ("BK") == 0)
-    create_bk_adder (adder_size, verilog);
-   else if (final_stage_adder.compare ("JSkCond") == 0)
-    create_JSkCond_adder (adder_size, verilog);
-  else{
-    cout << "Bad Final Stage Adder Selection!" << endl;
-    return 1;
-  }
-
-  verilog.push ("module "+final_stage_adder+"_"+to_string(adder_size)+"_spec (");
-  verilog.push("indent");
-  verilog.push("indent");
-  verilog.push ("input logic [" + to_string(adder_size-1) + ":0] IN1,");
-  verilog.push ("input logic [" + to_string(adder_size-1) +  ":0] IN2,");
-  verilog.push ("output logic adder_correct,");
-  verilog.push ("output logic ["  + to_string(adder_size) +  ":0] spec_res);");
-  verilog.push("outdent");
-  verilog.push("");
-  verilog.push("assign spec_res = IN1 + IN2;");
-  verilog.push("wire ["  + to_string(adder_size) +  ":0] adder_res;");
-  verilog.push(final_stage_adder+"_"+to_string(adder_size) + " adder(IN1, IN2, adder_res);");
-  verilog.push("assign adder_correct = ((spec_res == adder_res) ? 1 : 0);");
-  verilog.push("");
-  verilog.push("outdent");
-  verilog.push ("endmodule");
-  verilog.push("");
-
-  verilog.push ("\n");
-
-  cout << endl;
-  cout << "Adder Module (" << final_stage_adder << "_" << adder_size << ") is created." << endl;
-  cout << "   Inputs: IN1[" << adder_size-1 << ":0], IN2[" << adder_size-1 << ":0]" << endl;
-  cout << "   Output: result[" <<adder_size << ":0]" << endl;
-  cout << "   Function: result=IN1+IN2" << endl;
-
-  return 0;
-
-}
 
 void print_int(string x, std::list<int> const &list)
 {
@@ -945,7 +961,7 @@ int create_four_mult (int  in_size,
                             one_mult_in_size,
                             one_mult_out_size,
 			    0,
-                            "",
+                            final_stage_adder,
                             pp_encoding,
                             tree,
                             false,
@@ -1293,7 +1309,7 @@ int create_mac (int  in1_size,
                             in2_size,
                             mult_out_size,
 			    0,
-                            "",
+                            final_stage_adder,
                             pp_encoding,
                             tree,
                             false,
@@ -1500,7 +1516,7 @@ int create_dot (int  in1_size,
                             in2_size,
                             mult_out_size,
 			    0,
-                            "",
+                            final_stage_adder,
                             pp_encoding,
                             tree,
                             false,
@@ -1775,7 +1791,8 @@ int main(int argc, char **argv) {
   }
 
   if (create_fin_adder){
-    retval1 = create_adder(final_stage_adder, adder_size, verilog);
+    // if only adder is being asked to create, then create it with carryin. 
+    retval1 = create_adder(final_stage_adder, main_type.compare("Adder") == 0, adder_size, verilog);
   }
   if (retval0 == 1 || retval0 == 1)
     return 1;

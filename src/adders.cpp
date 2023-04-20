@@ -90,11 +90,13 @@ void create_ha_fa (bool ha_fa_with_gates, std::queue<string>& verilog){
 
 }
 
-void create_rp_adder (int size, std::queue<string>& verilog){
+void create_rp_adder (int size, bool carryin, std::queue<string>& verilog){
 
   verilog.push ("module RP_" + to_string(size) + " ( ");
   verilog.push("indent");
   verilog.push("indent");
+  if(carryin)
+    verilog.push ("input logic carryin,");
   verilog.push ("input logic [" + to_string(size-1) + ":0] IN1,");
   verilog.push ("input logic [" + to_string(size-1) + ":0] IN2,");
   verilog.push ("output logic [" + to_string(size) + ":0] OUT);");
@@ -114,7 +116,10 @@ void create_rp_adder (int size, std::queue<string>& verilog){
 
   for (int i=0; i < size; i++){
     if (i == 0)
-      verilog.push ("ha m0 (IN1[0], IN2[0], OUT[0], C0);");
+      if (carryin)
+	verilog.push ("fa m0 (carryin, IN1[0], IN2[0], OUT[0], C0);");
+      else
+	verilog.push ("ha m0 (IN1[0], IN2[0], OUT[0], C0);");
     else
       verilog.push ("fa m" + to_string(i) + " (IN1[" +  to_string(i) + "], IN2["
                     + to_string(i) + "], C" + to_string(i-1) + ", OUT[" + to_string(i) + "], C"
@@ -131,12 +136,14 @@ void create_rp_adder (int size, std::queue<string>& verilog){
 
 }
 
-void ppx_preprocess (int size, int& index, string addertype,
+void ppx_preprocess (int size, bool carryin, int& index, string addertype,
                      string*& g, string*& p, std::queue<string>& verilog){
 
   verilog.push ("module " + addertype + "_" + to_string(size) + " ( ");
   verilog.push("indent");
   verilog.push("indent");
+  if(carryin)
+    verilog.push ("input logic carryin,");
   verilog.push ("input logic [" + to_string(size-1) + ":0] IN1,");
   verilog.push ("input logic [" + to_string(size-1) + ":0] IN2,");
   verilog.push ("output logic [" + to_string(size) + ":0] OUT);");
@@ -146,9 +153,15 @@ void ppx_preprocess (int size, int& index, string addertype,
   verilog.push ( "wire logic ["+ to_string(size-1) + ":0] p_0;");
   verilog.push ( "wire logic ["+ to_string(size-1) + ":0] g_0;");
 
-  verilog.push ( "assign g_0 = IN1 & IN2;");
-  verilog.push ( "assign p_0 = IN1 ^ IN2;");
-
+  if(carryin){
+    verilog.push ( "assign g_0["+ to_string(size-1) + ":1] = IN1["+ to_string(size-1) + ":1] & IN2["+ to_string(size-1) + ":1];");
+    verilog.push ( "assign p_0["+ to_string(size-1) + ":1] = IN1["+ to_string(size-1) + ":1] ^ IN2["+ to_string(size-1) + ":1];");
+    verilog.push ("fa m0 (carryin, IN1[0], IN2[0], p_0[0], g_0[0]);");
+  }else{
+    verilog.push ( "assign g_0 = IN1 & IN2;");
+    verilog.push ( "assign p_0 = IN1 ^ IN2;");
+  }
+    
   for (int i = 0; i<size; i++){
     g[i] = "g_0[" + to_string(i) + "]";
     p[i] = "p_0[" + to_string(i) + "]";
@@ -187,7 +200,7 @@ void pgtmp_to_pg (int size, string*& from, string*& to){
     to[i] = from[i];
 }
 
-void create_hc_adder (int size, std::queue<string>& verilog){
+void create_hc_adder (int size, bool carryin, std::queue<string>& verilog){
 
   int index = 0;
 
@@ -197,7 +210,7 @@ void create_hc_adder (int size, std::queue<string>& verilog){
   string* gtmp = new string[size];
   string* ptmp = new string[size];
 
-  ppx_preprocess(size, index, "HC", gtmp, ptmp, verilog);
+  ppx_preprocess(size, carryin, index, "HC", gtmp, ptmp, verilog);
   pgtmp_to_pg(size, gtmp, g);
   pgtmp_to_pg(size, ptmp, p);
 
@@ -287,7 +300,7 @@ void create_hc_adder (int size, std::queue<string>& verilog){
 
 }
 
-void create_lf_adder (int size, std::queue<string>& verilog){
+void create_lf_adder (int size, bool carryin, std::queue<string>& verilog){
 
   int index = 0;
 
@@ -298,7 +311,7 @@ void create_lf_adder (int size, std::queue<string>& verilog){
   string* ptmp = new string[size];
 
 
-  ppx_preprocess(size, index, "LF", gtmp, ptmp, verilog);
+  ppx_preprocess(size,  carryin, index, "LF", gtmp, ptmp, verilog);
   pgtmp_to_pg(size, gtmp, g);
   pgtmp_to_pg(size, ptmp, p);
 
@@ -344,7 +357,7 @@ void create_lf_adder (int size, std::queue<string>& verilog){
 
 }
 
-void create_ks_adder (int size, std::queue<string>& verilog){
+void create_ks_adder (int size, bool carryin, std::queue<string>& verilog){
 
   int index = 0;
 
@@ -354,7 +367,7 @@ void create_ks_adder (int size, std::queue<string>& verilog){
   string* gtmp = new string[size];
   string* ptmp = new string[size];
 
-  ppx_preprocess(size, index, "KS", gtmp, ptmp, verilog);
+  ppx_preprocess(size,  carryin, index, "KS", gtmp, ptmp, verilog);
   pgtmp_to_pg(size, gtmp, g);
   pgtmp_to_pg(size, ptmp, p);
 
@@ -399,7 +412,7 @@ void create_ks_adder (int size, std::queue<string>& verilog){
 
 }
 
-void create_bk_adder (int size, std::queue<string>& verilog){
+void create_bk_adder (int size, bool carryin, std::queue<string>& verilog){
 
   int index = 0;
 
@@ -410,7 +423,7 @@ void create_bk_adder (int size, std::queue<string>& verilog){
   string* ptmp = new string[size];
 
 
-  ppx_preprocess(size, index, "BK", gtmp, ptmp, verilog);
+  ppx_preprocess(size,  carryin, index, "BK", gtmp, ptmp, verilog);
   pgtmp_to_pg(size, gtmp, g);
   pgtmp_to_pg(size, ptmp, p);
 
@@ -489,7 +502,7 @@ void create_bk_adder (int size, std::queue<string>& verilog){
 
 }
 
-void create_JSkCond_adder (int size, std::queue<string>& verilog){
+void create_JSkCond_adder (int size, bool carryin, std::queue<string>& verilog){
 
   int index = 0;
 
@@ -500,7 +513,7 @@ void create_JSkCond_adder (int size, std::queue<string>& verilog){
   string* ptmp = new string[size];
 
 
-  ppx_preprocess(size, index, "JSkCond", gtmp, ptmp, verilog);
+  ppx_preprocess(size,  carryin,  index, "JSkCond", gtmp, ptmp, verilog);
   pgtmp_to_pg(size, gtmp, g);
   pgtmp_to_pg(size, ptmp, p);
 

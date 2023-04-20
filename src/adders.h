@@ -43,14 +43,14 @@ using namespace std;
 
 void create_ha_fa (bool ha_fa_with_gates, std::queue<string>& verilog);
 
-void create_rp_adder (int size, std::queue<string>& verilog);
+void create_rp_adder (int size, bool carryin, std::queue<string>& verilog);
 
-void create_hc_adder (int size, std::queue<string>& verilog);
+void create_hc_adder (int size, bool carryin, std::queue<string>& verilog);
 
-void create_lf_adder (int size, std::queue<string>& verilog);
+void create_lf_adder (int size, bool carryin, std::queue<string>& verilog);
 
-void create_ks_adder (int size, std::queue<string>& verilog);
+void create_ks_adder (int size, bool carryin, std::queue<string>& verilog);
 
-void create_bk_adder (int size, std::queue<string>& verilog);
+void create_bk_adder (int size, bool carryin, std::queue<string>& verilog);
 
-void create_JSkCond_adder (int size, std::queue<string>& verilog);
+void create_JSkCond_adder (int size, bool carryin, std::queue<string>& verilog);

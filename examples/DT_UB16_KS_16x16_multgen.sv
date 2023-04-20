@@ -40,6 +40,7 @@
 module DT_UB16_KS_16x16_spec (
         input logic [15:0] IN1,
         input logic [15:0] IN2,
+        input logic [0:0] IN3, //redundant
         output logic design_is_correct, // is set to 1 iff the output of DT_UB16_KS_16x16 matches its spec.
         output logic [31:0] design_res,
         output logic [31:0] spec_res);
@@ -64,19 +65,19 @@ module DT_UB16_KS_16x16(
     wire [16:0] mcand = {1'b0, IN2};
     wire [19:0] mcand_1x;
     wire [19:0] mcand_2x;
-    wire [19:0] mcand_3x;
+    wire [20:0] mcand_3x;
     wire [19:0] mcand_4x;
-    wire [19:0] mcand_5x;
+    wire [20:0] mcand_5x;
     wire [19:0] mcand_6x;
-    wire [19:0] mcand_7x;
+    wire [20:0] mcand_7x;
     wire [19:0] mcand_8x;
     assign mcand_1x = {{3{mcand[16]}},  mcand};
     assign mcand_2x = {{2{mcand[16]}},  mcand, 1'b0};
-    assign mcand_3x = mcand_1x + mcand_2x;
+    KS_20 calc_mcand_3x (1'b0, mcand_1x, mcand_2x, mcand_3x);
     assign mcand_4x = {{1{mcand[16]}},  mcand, 2'b0};
-    assign mcand_5x = mcand_1x + mcand_4x;
+    KS_20 calc_mcand_5x (1'b0, mcand_1x, mcand_4x, mcand_5x);
     assign mcand_6x = {mcand_3x[18:0], 1'b0};
-    assign mcand_7x = mcand_8x - mcand_1x;
+    KS_20 calc_mcand_7x (1'b1, ~mcand_1x, mcand_8x, mcand_7x);
     assign mcand_8x =  {{0{mcand[16]}},  mcand, 3'b0};
     
     // Booth Radix-16 Partial Products. Multiplier selectors: mult[3] mult[2] mult[1] mult[0] 1'b0
@@ -466,6 +467,347 @@ module DT_UB16_KS_16x16(
     logic [32:0] adder_result;
     KS_32 final_adder ({c71, c70, c69, c68, c67, c66, c65, c64, c63, c62, c61, c60, c59, c58, c57, c56, c55, c54, c53, c52, c51, c50, c49, c48, c47, c46, c45, tcomp1, pp_0[3], pp_0[2], pp_0[1], pp_0[0] }, {s72, s71, s70, s69, s68, s67, s66, s65, s64, s63, s62, s61, s60, s59, s58, s57, s56, s55, s54, s53, s52, s51, s50, s49, s48, s47, s46, s45, 1'b0, 1'b0, 1'b0, tcomp0 }, adder_result );
     assign result[31:0] = adder_result[31:0];
+endmodule
+
+
+
+module KS_20 ( 
+        input logic carryin,
+        input logic [19:0] IN1,
+        input logic [19:0] IN2,
+        output logic [20:0] OUT);
+    
+    wire logic [19:0] p_0;
+    wire logic [19:0] g_0;
+    assign g_0[19:1] = IN1[19:1] & IN2[19:1];
+    assign p_0[19:1] = IN1[19:1] ^ IN2[19:1];
+    fa m0 (carryin, IN1[0], IN2[0], p_0[0], g_0[0]);
+    
+// Kogge-Stone Adder 
+
+    
+    // KS stage 1
+    wire logic p_1_1;
+    wire logic g_1_1;
+    assign p_1_1 = p_0[1] & p_0[0];
+    assign g_1_1 = (p_0[1] & g_0[0]) | g_0[1];
+    wire logic p_1_2;
+    wire logic g_1_2;
+    assign p_1_2 = p_0[2] & p_0[1];
+    assign g_1_2 = (p_0[2] & g_0[1]) | g_0[2];
+    wire logic p_1_3;
+    wire logic g_1_3;
+    assign p_1_3 = p_0[3] & p_0[2];
+    assign g_1_3 = (p_0[3] & g_0[2]) | g_0[3];
+    wire logic p_1_4;
+    wire logic g_1_4;
+    assign p_1_4 = p_0[4] & p_0[3];
+    assign g_1_4 = (p_0[4] & g_0[3]) | g_0[4];
+    wire logic p_1_5;
+    wire logic g_1_5;
+    assign p_1_5 = p_0[5] & p_0[4];
+    assign g_1_5 = (p_0[5] & g_0[4]) | g_0[5];
+    wire logic p_1_6;
+    wire logic g_1_6;
+    assign p_1_6 = p_0[6] & p_0[5];
+    assign g_1_6 = (p_0[6] & g_0[5]) | g_0[6];
+    wire logic p_1_7;
+    wire logic g_1_7;
+    assign p_1_7 = p_0[7] & p_0[6];
+    assign g_1_7 = (p_0[7] & g_0[6]) | g_0[7];
+    wire logic p_1_8;
+    wire logic g_1_8;
+    assign p_1_8 = p_0[8] & p_0[7];
+    assign g_1_8 = (p_0[8] & g_0[7]) | g_0[8];
+    wire logic p_1_9;
+    wire logic g_1_9;
+    assign p_1_9 = p_0[9] & p_0[8];
+    assign g_1_9 = (p_0[9] & g_0[8]) | g_0[9];
+    wire logic p_1_10;
+    wire logic g_1_10;
+    assign p_1_10 = p_0[10] & p_0[9];
+    assign g_1_10 = (p_0[10] & g_0[9]) | g_0[10];
+    wire logic p_1_11;
+    wire logic g_1_11;
+    assign p_1_11 = p_0[11] & p_0[10];
+    assign g_1_11 = (p_0[11] & g_0[10]) | g_0[11];
+    wire logic p_1_12;
+    wire logic g_1_12;
+    assign p_1_12 = p_0[12] & p_0[11];
+    assign g_1_12 = (p_0[12] & g_0[11]) | g_0[12];
+    wire logic p_1_13;
+    wire logic g_1_13;
+    assign p_1_13 = p_0[13] & p_0[12];
+    assign g_1_13 = (p_0[13] & g_0[12]) | g_0[13];
+    wire logic p_1_14;
+    wire logic g_1_14;
+    assign p_1_14 = p_0[14] & p_0[13];
+    assign g_1_14 = (p_0[14] & g_0[13]) | g_0[14];
+    wire logic p_1_15;
+    wire logic g_1_15;
+    assign p_1_15 = p_0[15] & p_0[14];
+    assign g_1_15 = (p_0[15] & g_0[14]) | g_0[15];
+    wire logic p_1_16;
+    wire logic g_1_16;
+    assign p_1_16 = p_0[16] & p_0[15];
+    assign g_1_16 = (p_0[16] & g_0[15]) | g_0[16];
+    wire logic p_1_17;
+    wire logic g_1_17;
+    assign p_1_17 = p_0[17] & p_0[16];
+    assign g_1_17 = (p_0[17] & g_0[16]) | g_0[17];
+    wire logic p_1_18;
+    wire logic g_1_18;
+    assign p_1_18 = p_0[18] & p_0[17];
+    assign g_1_18 = (p_0[18] & g_0[17]) | g_0[18];
+    wire logic p_1_19;
+    wire logic g_1_19;
+    assign p_1_19 = p_0[19] & p_0[18];
+    assign g_1_19 = (p_0[19] & g_0[18]) | g_0[19];
+    
+    // KS stage 2
+    wire logic p_2_2;
+    wire logic g_2_2;
+    assign p_2_2 = p_1_2 & p_0[0];
+    assign g_2_2 = (p_1_2 & g_0[0]) | g_1_2;
+    wire logic p_2_3;
+    wire logic g_2_3;
+    assign p_2_3 = p_1_3 & p_1_1;
+    assign g_2_3 = (p_1_3 & g_1_1) | g_1_3;
+    wire logic p_2_4;
+    wire logic g_2_4;
+    assign p_2_4 = p_1_4 & p_1_2;
+    assign g_2_4 = (p_1_4 & g_1_2) | g_1_4;
+    wire logic p_2_5;
+    wire logic g_2_5;
+    assign p_2_5 = p_1_5 & p_1_3;
+    assign g_2_5 = (p_1_5 & g_1_3) | g_1_5;
+    wire logic p_2_6;
+    wire logic g_2_6;
+    assign p_2_6 = p_1_6 & p_1_4;
+    assign g_2_6 = (p_1_6 & g_1_4) | g_1_6;
+    wire logic p_2_7;
+    wire logic g_2_7;
+    assign p_2_7 = p_1_7 & p_1_5;
+    assign g_2_7 = (p_1_7 & g_1_5) | g_1_7;
+    wire logic p_2_8;
+    wire logic g_2_8;
+    assign p_2_8 = p_1_8 & p_1_6;
+    assign g_2_8 = (p_1_8 & g_1_6) | g_1_8;
+    wire logic p_2_9;
+    wire logic g_2_9;
+    assign p_2_9 = p_1_9 & p_1_7;
+    assign g_2_9 = (p_1_9 & g_1_7) | g_1_9;
+    wire logic p_2_10;
+    wire logic g_2_10;
+    assign p_2_10 = p_1_10 & p_1_8;
+    assign g_2_10 = (p_1_10 & g_1_8) | g_1_10;
+    wire logic p_2_11;
+    wire logic g_2_11;
+    assign p_2_11 = p_1_11 & p_1_9;
+    assign g_2_11 = (p_1_11 & g_1_9) | g_1_11;
+    wire logic p_2_12;
+    wire logic g_2_12;
+    assign p_2_12 = p_1_12 & p_1_10;
+    assign g_2_12 = (p_1_12 & g_1_10) | g_1_12;
+    wire logic p_2_13;
+    wire logic g_2_13;
+    assign p_2_13 = p_1_13 & p_1_11;
+    assign g_2_13 = (p_1_13 & g_1_11) | g_1_13;
+    wire logic p_2_14;
+    wire logic g_2_14;
+    assign p_2_14 = p_1_14 & p_1_12;
+    assign g_2_14 = (p_1_14 & g_1_12) | g_1_14;
+    wire logic p_2_15;
+    wire logic g_2_15;
+    assign p_2_15 = p_1_15 & p_1_13;
+    assign g_2_15 = (p_1_15 & g_1_13) | g_1_15;
+    wire logic p_2_16;
+    wire logic g_2_16;
+    assign p_2_16 = p_1_16 & p_1_14;
+    assign g_2_16 = (p_1_16 & g_1_14) | g_1_16;
+    wire logic p_2_17;
+    wire logic g_2_17;
+    assign p_2_17 = p_1_17 & p_1_15;
+    assign g_2_17 = (p_1_17 & g_1_15) | g_1_17;
+    wire logic p_2_18;
+    wire logic g_2_18;
+    assign p_2_18 = p_1_18 & p_1_16;
+    assign g_2_18 = (p_1_18 & g_1_16) | g_1_18;
+    wire logic p_2_19;
+    wire logic g_2_19;
+    assign p_2_19 = p_1_19 & p_1_17;
+    assign g_2_19 = (p_1_19 & g_1_17) | g_1_19;
+    
+    // KS stage 3
+    wire logic p_3_4;
+    wire logic g_3_4;
+    assign p_3_4 = p_2_4 & p_0[0];
+    assign g_3_4 = (p_2_4 & g_0[0]) | g_2_4;
+    wire logic p_3_5;
+    wire logic g_3_5;
+    assign p_3_5 = p_2_5 & p_1_1;
+    assign g_3_5 = (p_2_5 & g_1_1) | g_2_5;
+    wire logic p_3_6;
+    wire logic g_3_6;
+    assign p_3_6 = p_2_6 & p_2_2;
+    assign g_3_6 = (p_2_6 & g_2_2) | g_2_6;
+    wire logic p_3_7;
+    wire logic g_3_7;
+    assign p_3_7 = p_2_7 & p_2_3;
+    assign g_3_7 = (p_2_7 & g_2_3) | g_2_7;
+    wire logic p_3_8;
+    wire logic g_3_8;
+    assign p_3_8 = p_2_8 & p_2_4;
+    assign g_3_8 = (p_2_8 & g_2_4) | g_2_8;
+    wire logic p_3_9;
+    wire logic g_3_9;
+    assign p_3_9 = p_2_9 & p_2_5;
+    assign g_3_9 = (p_2_9 & g_2_5) | g_2_9;
+    wire logic p_3_10;
+    wire logic g_3_10;
+    assign p_3_10 = p_2_10 & p_2_6;
+    assign g_3_10 = (p_2_10 & g_2_6) | g_2_10;
+    wire logic p_3_11;
+    wire logic g_3_11;
+    assign p_3_11 = p_2_11 & p_2_7;
+    assign g_3_11 = (p_2_11 & g_2_7) | g_2_11;
+    wire logic p_3_12;
+    wire logic g_3_12;
+    assign p_3_12 = p_2_12 & p_2_8;
+    assign g_3_12 = (p_2_12 & g_2_8) | g_2_12;
+    wire logic p_3_13;
+    wire logic g_3_13;
+    assign p_3_13 = p_2_13 & p_2_9;
+    assign g_3_13 = (p_2_13 & g_2_9) | g_2_13;
+    wire logic p_3_14;
+    wire logic g_3_14;
+    assign p_3_14 = p_2_14 & p_2_10;
+    assign g_3_14 = (p_2_14 & g_2_10) | g_2_14;
+    wire logic p_3_15;
+    wire logic g_3_15;
+    assign p_3_15 = p_2_15 & p_2_11;
+    assign g_3_15 = (p_2_15 & g_2_11) | g_2_15;
+    wire logic p_3_16;
+    wire logic g_3_16;
+    assign p_3_16 = p_2_16 & p_2_12;
+    assign g_3_16 = (p_2_16 & g_2_12) | g_2_16;
+    wire logic p_3_17;
+    wire logic g_3_17;
+    assign p_3_17 = p_2_17 & p_2_13;
+    assign g_3_17 = (p_2_17 & g_2_13) | g_2_17;
+    wire logic p_3_18;
+    wire logic g_3_18;
+    assign p_3_18 = p_2_18 & p_2_14;
+    assign g_3_18 = (p_2_18 & g_2_14) | g_2_18;
+    wire logic p_3_19;
+    wire logic g_3_19;
+    assign p_3_19 = p_2_19 & p_2_15;
+    assign g_3_19 = (p_2_19 & g_2_15) | g_2_19;
+    
+    // KS stage 4
+    wire logic p_4_8;
+    wire logic g_4_8;
+    assign p_4_8 = p_3_8 & p_0[0];
+    assign g_4_8 = (p_3_8 & g_0[0]) | g_3_8;
+    wire logic p_4_9;
+    wire logic g_4_9;
+    assign p_4_9 = p_3_9 & p_1_1;
+    assign g_4_9 = (p_3_9 & g_1_1) | g_3_9;
+    wire logic p_4_10;
+    wire logic g_4_10;
+    assign p_4_10 = p_3_10 & p_2_2;
+    assign g_4_10 = (p_3_10 & g_2_2) | g_3_10;
+    wire logic p_4_11;
+    wire logic g_4_11;
+    assign p_4_11 = p_3_11 & p_2_3;
+    assign g_4_11 = (p_3_11 & g_2_3) | g_3_11;
+    wire logic p_4_12;
+    wire logic g_4_12;
+    assign p_4_12 = p_3_12 & p_3_4;
+    assign g_4_12 = (p_3_12 & g_3_4) | g_3_12;
+    wire logic p_4_13;
+    wire logic g_4_13;
+    assign p_4_13 = p_3_13 & p_3_5;
+    assign g_4_13 = (p_3_13 & g_3_5) | g_3_13;
+    wire logic p_4_14;
+    wire logic g_4_14;
+    assign p_4_14 = p_3_14 & p_3_6;
+    assign g_4_14 = (p_3_14 & g_3_6) | g_3_14;
+    wire logic p_4_15;
+    wire logic g_4_15;
+    assign p_4_15 = p_3_15 & p_3_7;
+    assign g_4_15 = (p_3_15 & g_3_7) | g_3_15;
+    wire logic p_4_16;
+    wire logic g_4_16;
+    assign p_4_16 = p_3_16 & p_3_8;
+    assign g_4_16 = (p_3_16 & g_3_8) | g_3_16;
+    wire logic p_4_17;
+    wire logic g_4_17;
+    assign p_4_17 = p_3_17 & p_3_9;
+    assign g_4_17 = (p_3_17 & g_3_9) | g_3_17;
+    wire logic p_4_18;
+    wire logic g_4_18;
+    assign p_4_18 = p_3_18 & p_3_10;
+    assign g_4_18 = (p_3_18 & g_3_10) | g_3_18;
+    wire logic p_4_19;
+    wire logic g_4_19;
+    assign p_4_19 = p_3_19 & p_3_11;
+    assign g_4_19 = (p_3_19 & g_3_11) | g_3_19;
+    
+    // KS stage 5
+    wire logic p_5_16;
+    wire logic g_5_16;
+    assign p_5_16 = p_4_16 & p_0[0];
+    assign g_5_16 = (p_4_16 & g_0[0]) | g_4_16;
+    wire logic p_5_17;
+    wire logic g_5_17;
+    assign p_5_17 = p_4_17 & p_1_1;
+    assign g_5_17 = (p_4_17 & g_1_1) | g_4_17;
+    wire logic p_5_18;
+    wire logic g_5_18;
+    assign p_5_18 = p_4_18 & p_2_2;
+    assign g_5_18 = (p_4_18 & g_2_2) | g_4_18;
+    wire logic p_5_19;
+    wire logic g_5_19;
+    assign p_5_19 = p_4_19 & p_2_3;
+    assign g_5_19 = (p_4_19 & g_2_3) | g_4_19;
+    
+    // KS postprocess 
+    assign OUT[0] = p_0[0];
+    assign OUT[1] = p_0[1] ^ g_0[0];
+    assign OUT[2] = p_0[2] ^ g_1_1;
+    assign OUT[3] = p_0[3] ^ g_2_2;
+    assign OUT[4] = p_0[4] ^ g_2_3;
+    assign OUT[5] = p_0[5] ^ g_3_4;
+    assign OUT[6] = p_0[6] ^ g_3_5;
+    assign OUT[7] = p_0[7] ^ g_3_6;
+    assign OUT[8] = p_0[8] ^ g_3_7;
+    assign OUT[9] = p_0[9] ^ g_4_8;
+    assign OUT[10] = p_0[10] ^ g_4_9;
+    assign OUT[11] = p_0[11] ^ g_4_10;
+    assign OUT[12] = p_0[12] ^ g_4_11;
+    assign OUT[13] = p_0[13] ^ g_4_12;
+    assign OUT[14] = p_0[14] ^ g_4_13;
+    assign OUT[15] = p_0[15] ^ g_4_14;
+    assign OUT[16] = p_0[16] ^ g_4_15;
+    assign OUT[17] = p_0[17] ^ g_5_16;
+    assign OUT[18] = p_0[18] ^ g_5_17;
+    assign OUT[19] = p_0[19] ^ g_5_18;
+    assign OUT[20] = g_5_19;
+endmodule
+
+module KS_20_spec (
+        input logic carryin,
+        input logic [19:0] IN1,
+        input logic [19:0] IN2,
+        output logic adder_correct,
+        output logic [20:0] spec_res);
+    
+    assign spec_res = IN1 + IN2 + carryin;
+    wire [20:0] adder_res;
+    KS_20 adder(carryin, IN1, IN2, adder_res);
+    assign adder_correct = ((spec_res == adder_res) ? 1 : 0);
+    
 endmodule
 
 

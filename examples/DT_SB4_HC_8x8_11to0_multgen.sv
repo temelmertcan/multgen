@@ -40,6 +40,7 @@
 module DT_SB4_HC_8x8_11to0_spec (
         input logic [7:0] IN1,
         input logic [7:0] IN2,
+        input logic [0:0] IN3, //redundant
         output logic design_is_correct, // is set to 1 iff the output of DT_SB4_HC_8x8_11to0 matches its spec.
         output logic [11:0] design_res,
         output logic [11:0] spec_res);

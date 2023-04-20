@@ -41,6 +41,7 @@
 module Merged_DT_SSP_RP_16x16_spec (
         input logic [15:0] IN1,
         input logic [15:0] IN2,
+        input logic [0:0] IN3, //redundant
         output logic design_is_correct, // is set to 1 iff the output of Merged_DT_SSP_RP_16x16  matches its spec.
         output logic [31:0] design_res,
         output logic [31:0] spec_res);

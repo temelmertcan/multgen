@@ -21,8 +21,6 @@ adders.o :  src/adders.cpp src/adders.h
 
 examples : multgen.o
 	@rm -rf examples/*.sv examples/*~; mkdir -p examples; cd examples;\
-	../multgen -type StandAlone -tree DT -pp SB16 -adder KS -in1size 6 -in2size 6;\
-	../multgen -type StandAlone -tree DT -pp UB16 -adder KS -in1size 6 -in2size 6;\
 	../multgen -type StandAlone -tree DT -pp UB16 -adder KS -in1size 16 -in2size 16;\
 	../multgen -type StandAlone -tree DT -pp SB4 -adder HC -in1size 8 -in2size 8 -outsize 12;\
 	../multgen -type MAC -tree WT -pp SB8 -adder LF -in1size 8 -in2size 10 -in3size 6;\

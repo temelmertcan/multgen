@@ -546,6 +546,9 @@ void create_br8pp (int m, int n, bool signed_mul,
       pp_matrix[i][j] = "";
   }
 
+  string fin_stage_adder_mod_name = final_stage_adder+"_"+to_string(pp_adder_size)+ "_carry";
+
+  
   /////
   verilog.push ("wire [" + to_string(pp_msb) + ":0] mcand_1x;");
   verilog.push ("wire [" + to_string(pp_msb) + ":0] mcand_2x;");
@@ -554,7 +557,7 @@ void create_br8pp (int m, int n, bool signed_mul,
   verilog.push ("assign mcand_1x = {{"+to_string(pp_msb - n + 1)+"{mcand["+ to_string(n-1) +"]}},  mcand};");
   verilog.push ("assign mcand_2x = {{"+to_string(pp_msb - n)+"{mcand["+ to_string(n-1) +"]}},  mcand, 1'b0};");
   //verilog.push ("assign mcand_3x = mcand_1x + mcand_2x;");
-  verilog.push (final_stage_adder + "_"+ to_string(pp_adder_size)+" calc_mcand_3x (1'b0, mcand_1x, mcand_2x, mcand_3x);");
+  verilog.push (fin_stage_adder_mod_name + " calc_mcand_3x (1'b0, mcand_1x, mcand_2x, mcand_3x);");
   verilog.push ("assign mcand_4x = {{"+to_string(pp_msb - n - 1)+"{mcand["+ to_string(n-1) +"]}},  mcand, 2'b0};");
   /////
 
@@ -723,6 +726,8 @@ void create_br16pp (int m, int n, bool signed_mul,
   }
 
   /////
+  string fin_stage_adder_mod_name = final_stage_adder+"_"+to_string(pp_adder_size)+ "_carry";
+
   verilog.push ("wire [" + to_string(pp_msb) + ":0] mcand_1x;");
   verilog.push ("wire [" + to_string(pp_msb) + ":0] mcand_2x;");
   verilog.push ("wire [" + to_string(pp_msb+1) + ":0] mcand_3x;");
@@ -733,14 +738,16 @@ void create_br16pp (int m, int n, bool signed_mul,
   verilog.push ("wire [" + to_string(pp_msb) + ":0] mcand_8x;");
   verilog.push ("assign mcand_1x = {{"+to_string(pp_msb - n + 1)+"{mcand["+ to_string(n-1) +"]}},  mcand};");
   verilog.push ("assign mcand_2x = {{"+to_string(pp_msb - n)+"{mcand["+ to_string(n-1) +"]}},  mcand, 1'b0};");
-  verilog.push (final_stage_adder + "_" + to_string(pp_adder_size) + " calc_mcand_3x (1'b0, mcand_1x, mcand_2x, mcand_3x);");
+  verilog.push (fin_stage_adder_mod_name + " calc_mcand_3x (1'b0, mcand_1x, mcand_2x, mcand_3x);");
   //verilog.push ("assign mcand_3x = mcand_1x + mcand_2x;");
   verilog.push ("assign mcand_4x = {{"+to_string(pp_msb - n - 1)+"{mcand["+ to_string(n-1) +"]}},  mcand, 2'b0};");
   //verilog.push ("assign mcand_5x = mcand_1x + mcand_4x;");
-  verilog.push (final_stage_adder + "_"+ to_string(pp_adder_size)+" calc_mcand_5x (1'b0, mcand_1x, mcand_4x, mcand_5x);");
+  verilog.push (fin_stage_adder_mod_name +" calc_mcand_5x (1'b0, mcand_1x, mcand_4x, mcand_5x);");
   verilog.push ("assign mcand_6x = {mcand_3x[" + to_string(pp_msb-1) + ":0], 1'b0};");
+  // if (signed_mul)
+  //   verilog.push (fin_stage_adder_mod_name + " calc_mcand_7x (1'b1, ~mcand_1x, mcand_8x, mcand_7x);");
+  // else
   verilog.push ("assign mcand_7x = mcand_8x - mcand_1x;");
-  //verilog.push (final_stage_adder + "_" + to_string(pp_adder_size) + " calc_mcand_7x (1'b1, ~mcand_1x, mcand_8x, mcand_7x);");
   verilog.push ("assign mcand_8x =  {{"+to_string(pp_msb - n - 2)+"{mcand["+ to_string(n-1) +"]}},  mcand, 3'b0};");
 
   /////

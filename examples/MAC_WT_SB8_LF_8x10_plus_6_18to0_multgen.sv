@@ -71,7 +71,7 @@ module WT_SB8_8x10(
     wire [11:0] mcand_4x;
     assign mcand_1x = {{2{mcand[9]}},  mcand};
     assign mcand_2x = {{1{mcand[9]}},  mcand, 1'b0};
-    LF_12 calc_mcand_3x (1'b0, mcand_1x, mcand_2x, mcand_3x);
+    LF_12_carry calc_mcand_3x (1'b0, mcand_1x, mcand_2x, mcand_3x);
     assign mcand_4x = {{0{mcand[9]}},  mcand, 2'b0};
     
     // Booth Radix-8 Partial Products. Multiplier selectors: mult[2] mult[1] mult[0] 1'b0
@@ -237,7 +237,7 @@ endmodule
 
 
 
-module LF_12 ( 
+module LF_12_carry ( 
         input logic carryin,
         input logic [11:0] IN1,
         input logic [11:0] IN2,
@@ -356,7 +356,7 @@ module LF_12 (
     assign OUT[12] = g_4_11;
 endmodule
 
-module LF_12_spec (
+module LF_12_carry_spec (
         input logic carryin,
         input logic [11:0] IN1,
         input logic [11:0] IN2,
@@ -365,7 +365,7 @@ module LF_12_spec (
     
     assign spec_res = IN1 + IN2 + carryin;
     wire [12:0] adder_res;
-    LF_12 adder(carryin, IN1, IN2, adder_res);
+    LF_12_carry adder(carryin, IN1, IN2, adder_res);
     assign adder_correct = ((spec_res == adder_res) ? 1 : 0);
     
 endmodule

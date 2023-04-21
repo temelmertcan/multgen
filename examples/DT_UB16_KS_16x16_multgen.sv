@@ -73,11 +73,11 @@ module DT_UB16_KS_16x16(
     wire [19:0] mcand_8x;
     assign mcand_1x = {{3{mcand[16]}},  mcand};
     assign mcand_2x = {{2{mcand[16]}},  mcand, 1'b0};
-    KS_20 calc_mcand_3x (1'b0, mcand_1x, mcand_2x, mcand_3x);
+    KS_20_carry calc_mcand_3x (1'b0, mcand_1x, mcand_2x, mcand_3x);
     assign mcand_4x = {{1{mcand[16]}},  mcand, 2'b0};
-    KS_20 calc_mcand_5x (1'b0, mcand_1x, mcand_4x, mcand_5x);
+    KS_20_carry calc_mcand_5x (1'b0, mcand_1x, mcand_4x, mcand_5x);
     assign mcand_6x = {mcand_3x[18:0], 1'b0};
-    KS_20 calc_mcand_7x (1'b1, ~mcand_1x, mcand_8x, mcand_7x);
+    assign mcand_7x = mcand_8x - mcand_1x;
     assign mcand_8x =  {{0{mcand[16]}},  mcand, 3'b0};
     
     // Booth Radix-16 Partial Products. Multiplier selectors: mult[3] mult[2] mult[1] mult[0] 1'b0
@@ -471,7 +471,7 @@ endmodule
 
 
 
-module KS_20 ( 
+module KS_20_carry ( 
         input logic carryin,
         input logic [19:0] IN1,
         input logic [19:0] IN2,
@@ -796,7 +796,7 @@ module KS_20 (
     assign OUT[20] = g_5_19;
 endmodule
 
-module KS_20_spec (
+module KS_20_carry_spec (
         input logic carryin,
         input logic [19:0] IN1,
         input logic [19:0] IN2,
@@ -805,7 +805,7 @@ module KS_20_spec (
     
     assign spec_res = IN1 + IN2 + carryin;
     wire [20:0] adder_res;
-    KS_20 adder(carryin, IN1, IN2, adder_res);
+    KS_20_carry adder(carryin, IN1, IN2, adder_res);
     assign adder_correct = ((spec_res == adder_res) ? 1 : 0);
     
 endmodule

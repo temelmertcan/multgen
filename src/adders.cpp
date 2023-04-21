@@ -92,7 +92,9 @@ void create_ha_fa (bool ha_fa_with_gates, std::queue<string>& verilog){
 
 void create_rp_adder (int size, bool carryin, std::queue<string>& verilog){
 
-  verilog.push ("module RP_" + to_string(size) + " ( ");
+  string module_name = (string)"RP_"+to_string(size)+ (carryin?"_carry":"");
+
+  verilog.push ("module " + module_name + " ( ");
   verilog.push("indent");
   verilog.push("indent");
   if(carryin)
@@ -139,7 +141,9 @@ void create_rp_adder (int size, bool carryin, std::queue<string>& verilog){
 void ppx_preprocess (int size, bool carryin, int& index, string addertype,
                      string*& g, string*& p, std::queue<string>& verilog){
 
-  verilog.push ("module " + addertype + "_" + to_string(size) + " ( ");
+  string module_name = addertype+"_"+to_string(size)+ (carryin?"_carry":"");
+
+  verilog.push ("module " + module_name + " ( ");
   verilog.push("indent");
   verilog.push("indent");
   if(carryin)

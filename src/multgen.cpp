@@ -646,7 +646,9 @@ int create_adder (string final_stage_adder,
     return 1;
   }
 
-  verilog.push ("module "+final_stage_adder+"_"+to_string(adder_size)+"_spec (");
+  string module_name = final_stage_adder+"_"+to_string(adder_size)+ (carryin?"_carry":"");
+  
+  verilog.push ("module "+module_name+"_spec (");
   verilog.push("indent");
   verilog.push("indent");
   if(carryin)
@@ -659,7 +661,7 @@ int create_adder (string final_stage_adder,
   verilog.push("");
   verilog.push((string)"assign spec_res = IN1 + IN2" + (string)(carryin?" + carryin;":";"));
   verilog.push("wire ["  + to_string(adder_size) +  ":0] adder_res;");
-  verilog.push(final_stage_adder+"_"+to_string(adder_size) + " adder("+(carryin?"carryin, ":"")+"IN1, IN2, adder_res);");
+  verilog.push(module_name + " adder("+(carryin?"carryin, ":"")+"IN1, IN2, adder_res);");
   verilog.push("assign adder_correct = ((spec_res == adder_res) ? 1 : 0);");
   verilog.push("");
   verilog.push("outdent");
@@ -669,7 +671,7 @@ int create_adder (string final_stage_adder,
   verilog.push ("\n");
 
   cout << endl;
-  cout << "Adder Module (" << final_stage_adder << "_" << adder_size << ") is created." << endl;
+  cout << "Adder Module (" << module_name << ") is created." << endl;
   cout << "   Inputs: IN1[" << adder_size-1 << ":0], IN2[" << adder_size-1 << ":0]" << (carryin?", carryin":"")<< endl;
   cout << "   Output: result[" <<adder_size << ":0]" << endl;
   cout << "   Function: result=IN1 + IN2" << (carryin?" + carryin":"") << endl;

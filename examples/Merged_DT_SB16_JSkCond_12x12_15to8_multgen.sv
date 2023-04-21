@@ -77,11 +77,11 @@ module DT_SB16_7x7(
     wire [9:0] mcand_8x;
     assign mcand_1x = {{3{mcand[6]}},  mcand};
     assign mcand_2x = {{2{mcand[6]}},  mcand, 1'b0};
-    JSkCond_10 calc_mcand_3x (1'b0, mcand_1x, mcand_2x, mcand_3x);
+    JSkCond_10_carry calc_mcand_3x (1'b0, mcand_1x, mcand_2x, mcand_3x);
     assign mcand_4x = {{1{mcand[6]}},  mcand, 2'b0};
-    JSkCond_10 calc_mcand_5x (1'b0, mcand_1x, mcand_4x, mcand_5x);
+    JSkCond_10_carry calc_mcand_5x (1'b0, mcand_1x, mcand_4x, mcand_5x);
     assign mcand_6x = {mcand_3x[8:0], 1'b0};
-    JSkCond_10 calc_mcand_7x (1'b1, ~mcand_1x, mcand_8x, mcand_7x);
+    assign mcand_7x = mcand_8x - mcand_1x;
     assign mcand_8x =  {{0{mcand[6]}},  mcand, 3'b0};
     
     // Booth Radix-16 Partial Products. Multiplier selectors: mult[3] mult[2] mult[1] mult[0] 1'b0
@@ -206,7 +206,7 @@ endmodule
 
 
 
-module JSkCond_10 ( 
+module JSkCond_10_carry ( 
         input logic carryin,
         input logic [9:0] IN1,
         input logic [9:0] IN2,
@@ -303,7 +303,7 @@ module JSkCond_10 (
     assign OUT[10] = g_4_9;
 endmodule
 
-module JSkCond_10_spec (
+module JSkCond_10_carry_spec (
         input logic carryin,
         input logic [9:0] IN1,
         input logic [9:0] IN2,
@@ -312,7 +312,7 @@ module JSkCond_10_spec (
     
     assign spec_res = IN1 + IN2 + carryin;
     wire [10:0] adder_res;
-    JSkCond_10 adder(carryin, IN1, IN2, adder_res);
+    JSkCond_10_carry adder(carryin, IN1, IN2, adder_res);
     assign adder_correct = ((spec_res == adder_res) ? 1 : 0);
     
 endmodule

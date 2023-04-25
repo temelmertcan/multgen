@@ -58,6 +58,22 @@ void move_to_main_queue (queue<string>* temp,
   }
 }
 
+void print_main_queue (queue<string>* main,
+		       int size){
+  
+  cout << "Printing main queue " << endl; 
+  for (int i = 0; i < size; i++){
+    cout << "Col " << i << ": ";
+    queue<string> copyq = main[i];
+    while (!copyq.empty()){
+      cout << copyq.front() << " ";
+      copyq.pop();
+    }
+    cout << endl;
+  }
+
+}
+
 int get_max_queue_size (std::queue<string>* q, int size){
 
   int max=0;
@@ -67,6 +83,8 @@ int get_max_queue_size (std::queue<string>* q, int size){
       max = cur;
   }
 
+  //cout << "!!! max queue size :"  <<max << endl;
+  
   return max;
 }
 
@@ -359,6 +377,368 @@ void create_wallacetree (string** pp_matrix,
 
     // Step 2; Move stuff from temp_queue to main_queue
     move_to_main_queue(temp_queue, main_queue, out_size);
+
+  }
+
+  verilog.push("");
+
+  if (create_fin_adder)
+    create_finaladder_inst (main_queue,
+                            final_stage_adder,
+                            out_size, shift_amount,
+                            verilog,
+                            adder_size);
+  else
+    create_two_result_vectors (main_queue,
+                               out_size,
+                               verilog,
+                               signed_mult,
+                               adder_size,
+                               zeros_in_output);
+
+  delete[] temp_queue;
+  // delete[] main_queue;
+
+  // cout << "adder size " << adder_size << endl;
+
+}
+
+
+void compress_concat_vector (string* arr, int& size){
+
+  const unsigned long max = std::string::npos;
+
+  // cout << "Starting compress_concat_vector before:" << endl;
+  // for (int i = 0 ; i <size ; i++)
+  //   cout << arr[i] << " ";
+  // cout << endl;
+    
+  
+  try{
+    
+    int offset = 0;
+    for (int i = 0; i<size-1-offset; i++){
+      string& a = arr[i];
+      string b = arr[i+1+offset];
+      if (a.find("'b0") < max && b.find("'b0") < max){
+
+	// !!
+	//cout << "Merging zeros sizes: " << a.size() << " "<< b.size() << endl;
+	//cout << "Merging zeros find res: " << a.find("'b0") << " "<< b.find("'b0") << endl;
+	//cout << "Merging zeros: " << a << " "<< b << endl;
+	
+	int newcoef = stoi(a.substr(0,a.find("'b0"))) + stoi(b.substr(0,b.find("'b0")));
+	a = to_string(newcoef) + "'b0";
+	i--;
+	offset++;
+      }
+      else if (a.find("[") <max && b.find("[") <max && a.find("]") <max && b.find("]")<max
+	  && a.substr(0, a.find("[")) == b.substr(0, b.find("["))){
+
+	int s1, e1;
+	if (a.find(":")<max){
+	  e1 = stoi(a.substr(a.find("[")+1,a.find(":")));
+	  s1 = stoi(a.substr(a.find(":")+1,a.find("]")));
+	}else {
+	  s1 = stoi(a.substr(a.find("[")+1,a.find("]")));
+	  e1 = s1;
+	}
+
+	int s2, e2;
+	if (b.find(":")<max){
+	  e2 = stoi(b.substr(b.find("[")+1,b.find(":")));
+	  s2 = stoi(b.substr(b.find(":")+1,b.find("]")));
+	}else {
+	  s2 = stoi(b.substr(a.find("[")+1,b.find("]")));
+	  e2 = s2;
+	}
+      
+	if (s2 == (1 + e1)){
+	  
+	  // !!
+	  //cout << "Merging vectors: " << a << " "<< b << endl;
+
+	  
+	  a = a.substr(0, a.find("[")) + "[" + to_string(e2) + ":" + to_string(s1) + "]";
+	  i--;
+	  offset++;
+	} else {
+	  arr[i+1] = b;
+	}
+      } else
+	arr[i+1] = b;
+    }
+
+    size -= offset;
+    
+
+  }
+  catch(exception &err)
+    {
+      cout<<"Conversion failure"<<endl;
+      //cout << err << endl;
+    }
+
+  // for (int i = 0 ; i <size ; i++)
+  //   cout << arr[i] << " ";
+  // cout << endl;
+  
+}
+
+
+
+void create_4to2tree (string** pp_matrix,
+		      string final_stage_adder,
+		      int pp_dim1,
+		      int pp_dim2,
+		      int out_size,
+		      int shift_amount,
+		      bool create_fin_adder,
+		      bool signed_mult,
+		      std::queue<string>& verilog,
+		      int& adder_size,
+		      bool**& zeros_in_output){
+
+  std::queue<string>* main_queue = new std::queue<string>[out_size];
+  std::queue<string>* temp_queue = new std::queue<string>[out_size];
+
+  // create the initial queue
+  //for (int i = pp_dim1-1; i >= 0; i--)
+  for (int i = 0; i < pp_dim1; i++)
+    for (int j = 0; j < pp_dim2 && j< out_size; j++)
+      if (pp_matrix[i][j] != "")
+        main_queue[j].push (pp_matrix[i][j]);
+
+  int cnt = 0;
+  int stage_cnt = 0;
+
+  struct four2twoi {
+    four2twoi(string var1,string var2,string var3,string var4,string var5,int col,int maxsize){
+      in1 = new string[maxsize];
+      in2 = new string[maxsize];
+      in3 = new string[maxsize];
+      in4 = new string[maxsize];
+      in1[0]=var1;
+      in2[0]=var2;
+      in3[0]=var3;
+      in4[0]=var4;
+      cin=var5;
+      this->col = col;
+      this->size=1;
+    }
+    ~four2twoi(){
+      delete in1; delete in2; delete in3; delete in4;
+    }
+    void add(string var1,string var2,string var3,string var4){
+      in1[size] = var1;
+      in2[size] = var2;
+      in3[size] = var3;
+      in4[size] = var4;
+      size++;
+      
+    }
+    int col = 0; // starting col num.
+    int size = 0;
+    string cin = "";
+    string *in1,*in2,*in3,*in4;  
+   };
+
+  int max_q_size;
+  //print_main_queue(main_queue, out_size);
+
+  while ((max_q_size = get_max_queue_size(main_queue, out_size)) > 2) {
+
+    
+    // Step 1: sum the stuff in main_queue with fa/ha
+
+    int start = -1;
+    for (int j = 0; j < out_size; j++){
+      std::queue<string>& cur = main_queue[j];
+      if (cur.size()>=(max_q_size>5?5:max_q_size>4?4:3)){
+	start = j; 
+	break;
+      }
+    }
+    if (start < 0) // should never happen bcs of the while condition.
+      break;
+
+    // !!
+    //cout<< ("// 4to2 compressor tree Stage " + to_string(stage_cnt)) << endl;
+    
+    // !!
+    //cout << "Starting column is " << start << endl;
+
+    std::queue<four2twoi*> avl_four2twoi;
+    std::queue<four2twoi*> used_four2twoi;
+    
+    
+    
+    verilog.push("");
+    verilog.push("// 4to2 compressor tree Stage " + to_string(++stage_cnt));
+    for (int j = start; j < out_size; j++){
+      // !!
+      //cout << "Working on j=" << j << endl;
+      
+      std::queue<string>& cur = main_queue[j];
+      while (cur.size() >= 2){
+	//cout << "cur.size() " << cur.size() << endl;
+	string var1 = cur.front();
+	cur.pop();
+	string var2 = cur.front();
+	cur.pop();
+	string var3 = "1'b0";
+	if (cur.size() >= 1){
+	  var3 = cur.front();
+	  cur.pop();
+	}
+	string var4 = "1'b0";
+	if (cur.size() >= 1){
+	  var4 = cur.front();
+	  cur.pop();
+	}
+
+	if (avl_four2twoi.empty()){
+	  string var5 = "1'b0";
+	  if (cur.size() >= 1){
+	    var5 = cur.front();
+	    cur.pop();
+	  }
+	  //cout << "Creating a new start for:"<<var1<<var2<<var3<<var4<<var5<<endl;
+	  four2twoi * f_obj = new four2twoi(var1,var2,var3,var4,var5,j,out_size);
+	  used_four2twoi.push(f_obj);
+	}else{
+	  four2twoi * f_obj = avl_four2twoi.front();
+	  avl_four2twoi.pop();
+	  f_obj->add(var1,var2,var3,var4);
+	  used_four2twoi.push(f_obj);
+	}
+      }
+      //!!
+      //cout << "Filling unused avls " <<endl;
+      // unused available ones should be filled with zeros for this column
+      while(!avl_four2twoi.empty()){
+	string var1 = "1'b0";
+	if (cur.size() >= 1){
+	  var1 = cur.front();
+	  cur.pop();
+	}
+	four2twoi * f_obj = avl_four2twoi.front();
+	avl_four2twoi.pop();
+	f_obj->add(var1,"1'b0","1'b0","1'b0");
+	used_four2twoi.push(f_obj);
+      }
+
+      // Moving onto the next column, make all used now available.
+      avl_four2twoi.swap(used_four2twoi);
+
+      
+    }
+
+    // !!
+    //cout << "Time to dump 4to2-compressor instances " << avl_four2twoi.size() << endl;
+    
+    // Time to dump 4to2-compressor instances
+    while(!avl_four2twoi.empty()){
+
+      // !!
+      //cout << "Total # of compressors to add: " << avl_four2twoi.size() << endl;
+      
+      four2twoi * f_obj = avl_four2twoi.front();
+      avl_four2twoi.pop();
+
+      // get rid of trailing 1'b0 stuff.
+      int trailing_size = 0;
+      for (int i = f_obj->size-1; i>=0; i--){
+	if (f_obj->in1[i]=="1'b0" && f_obj->in2[i]=="1'b0" && f_obj->in3[i]=="1'b0" && f_obj->in4[i]=="1'b0"){
+	  trailing_size++;
+	}else
+	  break;
+      }
+      int localsize = f_obj->size - trailing_size;
+
+      // !!
+      //cout << "trailing_size: " << trailing_size << endl;
+
+
+      string* in1 = f_obj->in1;
+      string* in2 = f_obj->in2;
+      string* in3 = f_obj->in3;
+      string* in4 = f_obj->in4;
+      int in1size = localsize;
+      int in2size = localsize;
+      int in3size = localsize;
+      int in4size = localsize;
+
+      // !!
+      //cout << "merge input vector for a more readable and compact verilog output.... " << endl;
+      
+      // merge input vector for a more readable and compact verilog output.
+      compress_concat_vector(in1, in1size);
+      // !!
+      // cout << "merge in2 for a more readable and compact verilog output.... " << endl;
+      compress_concat_vector(in2, in2size);
+       // !!
+      //cout << "merge in3 for a more readable and compact verilog output.... " << endl;
+      compress_concat_vector(in3, in3size);
+       // !!
+      //cout << "merge in4 for a more readable and compact verilog output.... " << endl;
+      compress_concat_vector(in4, in4size);
+
+      verilog.push("");
+      verilog.push("wire cout" + to_string(cnt) + ";");
+      verilog.push("wire [" + to_string(localsize-1) + ":0] sum" + to_string(cnt) + ";");
+      verilog.push("wire [" + to_string(localsize-1) + ":0] carry" + to_string(cnt) + ";");
+      verilog.push("Four2Two #("+to_string(localsize)+") cmp42_"+to_string(cnt)+"(");
+      verilog.push("indent");
+      verilog.push("indent");
+      string inst = ".in1({";
+      for (int k = in1size-1; k>=0; k--){
+	inst += in1[k] + (k>0 ? ", ":"}),");
+      }
+      verilog.push(inst);
+      inst = ".in2({";
+      for (int k = in2size-1; k>=0; k--){
+	inst += in2[k] + (k>0 ? ", ":"}),");
+      }
+      verilog.push(inst);
+      inst = ".in3({";
+      for (int k = in3size-1; k>=0; k--){
+	inst += in3[k] + (k>0 ? ", ":"}),");
+      }
+      verilog.push(inst);
+      inst = ".in4({";
+      for (int k = in4size-1; k>=0; k--){
+	inst += in4[k] + (k>0 ? ", ":"}),");
+      }
+      verilog.push(inst);
+      verilog.push(".cin("+f_obj->cin+"),");
+      verilog.push(".sum(sum" + to_string(cnt) + "),");
+      verilog.push(".carry(carry" + to_string(cnt) + "),");
+      verilog.push(".cout(cout" + to_string(cnt) + "));");
+      verilog.push("outdent");
+      verilog.push("outdent");
+
+      // Now put the new result in temp_queue
+      for (int i = 0; i<localsize; i++){
+	int c = i+f_obj->col;
+	if (c < out_size)
+	  temp_queue[c].push("sum" + to_string(cnt) + "[" + to_string(i) + "]");
+	if (c+1 < out_size){
+	  temp_queue[c+1].push("carry" + to_string(cnt) + "[" + to_string(i) + "]");
+	  if (i == localsize-1)
+	    temp_queue[c+1].push("cout" + to_string(cnt));
+	}
+      }
+
+      //delete f_obj; f_obj=NULL;
+      cnt++;
+      
+    }
+     	
+    // Step 2; Move stuff from temp_queue to main_queue
+    move_to_main_queue(temp_queue, main_queue, out_size);
+
+    //print_main_queue(main_queue, out_size);
 
   }
 

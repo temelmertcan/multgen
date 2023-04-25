@@ -86,7 +86,41 @@ void create_ha_fa (bool ha_fa_with_gates, std::queue<string>& verilog){
 
   verilog.push("");
 
+  verilog.push ("module Four2Two ");
+  verilog.push("indent");
+  verilog.push("indent");
+  verilog.push("#(parameter WIDTH=1) (");
+  verilog.push ("input logic [WIDTH-1:0] in1,");
+  verilog.push ("input logic [WIDTH-1:0] in2,");
+  verilog.push ("input logic [WIDTH-1:0] in3,");
+  verilog.push ("input logic [WIDTH-1:0] in4,");
+  verilog.push ("input logic cin,");
+  verilog.push ("output logic [WIDTH-1:0] sum,");
+  verilog.push ("output logic [WIDTH-1:0] carry,");
+  verilog.push ("output logic cout);");
+  verilog.push("outdent");
+  verilog.push("");
+
+  verilog.push ("wire logic [WIDTH:0] temp1;");
+  verilog.push ("assign temp1 = {((in1 ^ in2)&in3 | in1 & ~(in1^in2)),cin};");
+ 
+  verilog.push ("assign sum = ((in1 ^ in2) ^ in3 ^ in4) ^ temp1[WIDTH-1:0];");
+  verilog.push ("assign carry = ((in1 ^ in2) ^ in3 ^ in4) & temp1[WIDTH-1:0] | in4 & ~((in1 ^ in2) ^ in3 ^ in4);");
+
+  verilog.push ("assign cout = temp1[WIDTH];");
+
+  
+  verilog.push("outdent");
+  verilog.push ("endmodule");
+  verilog.push("");
+
+  verilog.push ("\n");
+
   verilog.push ("");
+
+
+
+  
 
 }
 

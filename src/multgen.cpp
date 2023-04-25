@@ -149,6 +149,7 @@ int interact_with_user (int argc, char **argv,
       "  -tree <arg>    : Summation tree to be used. <arg> can be: \n" <<
       "  \t DT         - Dadda tree.\n " <<
       "  \t WT         - Wallace tree.\n" <<
+      "  \t c42        - 4-to-2 compressor tree.\n" <<
       "  -pp   <arg>    : PP encoding to be used. <arg> can be: \n" <<
       "  \t SSP        - signed, simple partial products.\n " <<
       "  \t USP        - unsigned, simple partial products.\n " <<
@@ -315,7 +316,8 @@ int interact_with_user (int argc, char **argv,
   }
 
   if (tree != "DT" &&
-      tree != "WT")
+      tree != "WT" &&
+      tree != "c42")
     while (!do_not_select_tree) {
 
       if (tree != "")
@@ -323,6 +325,7 @@ int interact_with_user (int argc, char **argv,
 
       cout << "1. Wallace Tree " << endl;
       cout << "2. Dadda Tree " << endl;
+      cout << "3. 4-to-2 compressor Tree " << endl;
 
       cout << "Select Summation Tree Algorithm: ";
       cin >> s;
@@ -331,6 +334,9 @@ int interact_with_user (int argc, char **argv,
         break;
       }else if (s.compare ("2") == 0)  {
         tree = "DT";
+        break;
+      }else if (s.compare ("3") == 0)  {
+        tree = "c42";
         break;
       } else
         cout << "Invalid Selection!" << endl;
@@ -833,6 +839,14 @@ int create_mult ( int  in1_size,
                         adder_size,
                         zeros_in_output);
 
+  } else if (tree.compare ("c42") == 0) {
+    create_4to2tree (pp_matrix, final_stage_adder, pp_dim1, pp_dim2,
+		     out_size, shift_amount,
+		     create_fin_adder,
+		     signed_mult,
+		     verilog,
+		     adder_size,
+		     zeros_in_output);
   } else if (tree.compare ("DT") == 0){
     create_daddatree (pp_matrix, final_stage_adder, pp_dim1, pp_dim2,
                       out_size, shift_amount,
@@ -1203,6 +1217,17 @@ int create_four_mult (int  in_size,
                         verilog,
                         adder_size,
                         zeros_in_output);
+  else if (tree.compare("c42") == 0)
+    create_4to2tree (pp_matrix,
+		     final_stage_adder,
+		     pp_dim1,
+		     pp_dim2,
+		     out_size, shift_amount,
+		     true,
+		     signed_mult,
+		     verilog,
+		     adder_size,
+		     zeros_in_output);
   else
     create_daddatree (pp_matrix,
                       final_stage_adder,
@@ -1399,6 +1424,17 @@ int create_mac (int  in1_size,
 
   if (tree.compare("WT") == 0)
     create_wallacetree (pp_matrix,
+                        final_stage_adder,
+                        pp_dim1,
+                        pp_dim2,
+                        out_size, shift_amount,
+                        true,
+                        signed_mult,
+                        verilog,
+                        adder_size,
+                        zeros_in_output);
+  else  if (tree.compare("c42") == 0)
+    create_4to2tree (pp_matrix,
                         final_stage_adder,
                         pp_dim1,
                         pp_dim2,
@@ -1626,6 +1662,17 @@ int create_dot (int  in1_size,
 
   if (tree.compare("WT") == 0)
     create_wallacetree (pp_matrix,
+                        final_stage_adder,
+                        pp_dim1,
+                        pp_dim2,
+                        out_size, shift_amount,
+                        true,
+                        signed_mult,
+                        verilog,
+                        adder_size,
+                        zeros_in_output);
+  else  if (tree.compare("c42") == 0)
+    create_4to2tree (pp_matrix,
                         final_stage_adder,
                         pp_dim1,
                         pp_dim2,

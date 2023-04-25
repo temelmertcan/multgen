@@ -6,6 +6,7 @@ An efficient integer multiplier generator, outputting Verilog modules. This prog
 with these summation tree algorithms:
 - Wallace Tree
 - Dadda Tree
+- 4-to-2 Compressor Tree
 with these partial products (signed or unsigned):
 - Simple 
 - Booth radix-2
@@ -20,13 +21,13 @@ and with these final stage adders:
 - J. Sklansky Conditional
 - Ripple-Carry
 
-You can use these generator as follows:
+To interactively generate a multiplier design:
 
 1. make
 2. ./multgen
 3. Follow the instructions to create the integer multiplier of your choice!
 
-To see all available options, run:
+You can also generate designs non-interactively. To see all available options, run:
 ./multgen -help
 
 The generator will also generate  a module with the design's specification.

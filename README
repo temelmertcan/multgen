@@ -21,6 +21,8 @@ and with these final stage adders:
 - J. Sklansky Conditional
 - Ripple-Carry
 
+Any operand size can be chosen. Users can choose to return only a certain part of the output (truncate,right-shift).
+
 To interactively generate a multiplier design:
 
 1. make

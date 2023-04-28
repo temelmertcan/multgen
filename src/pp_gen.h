@@ -72,6 +72,7 @@ void create_br2pp (int m, int n, bool signed_mul,
                    int& pp_dim1,
                    int& pp_dim2,
 		   std::list<int>& extra_ones_indices,
+		   bool allowXes,
                    std::queue<string>& verilog);
 
 void create_br4pp (int m, int n, bool signed_mul,
@@ -79,6 +80,7 @@ void create_br4pp (int m, int n, bool signed_mul,
                    int& pp_dim1,
                    int& pp_dim2,
 		   std::list<int>& extra_ones_indices,
+		   bool allowXes,
                    std::queue<string>& verilog);
 
 void create_br8pp (int m, int n, bool signed_mul,
@@ -87,7 +89,8 @@ void create_br8pp (int m, int n, bool signed_mul,
 		   int& pp_dim2,
 		   std::list<int>& extra_ones_indices,
 		   string final_stage_adder,
-		   int& pp_adder_size, 
+		   int& pp_adder_size,
+		   bool allowXes,
 		   std::queue<string>& verilog);
 
 void create_br16pp (int m, int n, bool signed_mul,
@@ -96,5 +99,6 @@ void create_br16pp (int m, int n, bool signed_mul,
 		    int& pp_dim2,
 		    std::list<int>& extra_ones_indices,
 		    string final_stage_adder,
-		    int& pp_adder_size, 
+		    int& pp_adder_size,
+		    bool allowXes,
 		    std::queue<string>& verilog);

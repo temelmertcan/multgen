@@ -174,6 +174,7 @@ void create_unsignedpp (int m, int n,
                         string**& pp_matrix,
                         int& pp_dim1,
                         int& pp_dim2,
+			
                         std::queue<string>& verilog){
 
   pp_dim1 = m;
@@ -215,6 +216,7 @@ void create_signedpp (int m, int n,
                       int& pp_dim1,
                       int& pp_dim2,
                       std::list<int>& extra_ones_indices,
+		   
                       std::queue<string>& verilog){
 
   pp_dim1 = m+1;
@@ -290,6 +292,7 @@ void create_br2pp (int m, int n, bool signed_mul,
                    int& pp_dim1,
                    int& pp_dim2,
                    std::list<int>& extra_ones_indices,
+		   bool allowXes,
                    std::queue<string>& verilog){
 
   // m multiplier size,
@@ -386,6 +389,7 @@ void create_br4pp (int m, int n, bool signed_mul,
                    int& pp_dim1,
                    int& pp_dim2,
                    std::list<int>& extra_ones_indices,
+		   bool allowXes,
                    std::queue<string>& verilog){
 
   // m multiplier size,
@@ -473,6 +477,7 @@ void create_br4pp (int m, int n, bool signed_mul,
     verilog.push ("      " +  select_2x + "  : " + cur_pp + " = mcand_2x; " );
     verilog.push ("      " +  select_n2x + " : " + cur_pp + " = (~ mcand_2x); " );
     verilog.push ("      " +  select_ne + "  : " + cur_pp + " = (~ mcand_1x); " );
+    if (!allowXes) verilog.push ("      default  : " + cur_pp + " = 0; " );
     verilog.push ("   endcase " );
     verilog.push ("   " + cur_pp + "["+to_string(pp_msb)+"] = ~"+ cur_pp + "["+to_string(pp_msb)+"]; // flip the MSB ");
     verilog.push ("end");
@@ -510,7 +515,8 @@ void create_br8pp (int m, int n, bool signed_mul,
                    int& pp_dim2,
                    std::list<int>& extra_ones_indices,
 		   string final_stage_adder,
-		   int& pp_adder_size, 
+		   int& pp_adder_size,
+		   bool allowXes,
                    std::queue<string>& verilog){
 
   // m multiplier size,
@@ -637,6 +643,7 @@ void create_br8pp (int m, int n, bool signed_mul,
     verilog.push ("      " +  select_n3x + " : " + cur_pp + " = (~ mcand_3x); " );
     verilog.push ("      " +  select_n2x + " : " + cur_pp + " = (~ mcand_2x); " );
     verilog.push ("      " +  select_ne + "  : " + cur_pp + " = (~ mcand_1x); " );
+    if (!allowXes) verilog.push ("      default  : " + cur_pp + " = 0; " );
     verilog.push ("   endcase " );
     verilog.push ("   " + cur_pp + "["+to_string(pp_msb)+"] = ~"+ cur_pp + "["+to_string(pp_msb)+"]; // flip the MSB ");
     verilog.push ("end");
@@ -687,7 +694,8 @@ void create_br16pp (int m, int n, bool signed_mul,
                     int& pp_dim2,
                     std::list<int>& extra_ones_indices,
 		    string final_stage_adder,
-		    int& pp_adder_size, 
+		    int& pp_adder_size,
+		    bool allowXes,
                     std::queue<string>& verilog){
 
   // m multiplier size, may need to round up to 3x+2, e.g., 5 8 11
@@ -876,6 +884,7 @@ void create_br16pp (int m, int n, bool signed_mul,
     verilog.push ("      " +  select_n3x + " : " + cur_pp + " = (~ mcand_3x); " );
     verilog.push ("      " +  select_n2x + " : " + cur_pp + " = (~ mcand_2x); " );
     verilog.push ("      " +  select_ne + "  : " + cur_pp + " = (~ mcand_1x); " );
+    if (!allowXes) verilog.push ("      default  : " + cur_pp + " = 0; " );
     verilog.push ("   endcase " );
     verilog.push ("   " + cur_pp + "["+to_string(pp_msb)+"] = ~"+ cur_pp + "["+to_string(pp_msb)+"]; // flip the MSB ");
     verilog.push ("end");

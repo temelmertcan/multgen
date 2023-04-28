@@ -120,6 +120,7 @@ int interact_with_user (int argc, char **argv,
                         int& dot_size,
                         int& out_size,
 			int& shift_amount,
+			bool& allowXes,
                         bool& signed_mult,
                         bool& ha_fa_with_gates,
                         string& final_stage_adder,
@@ -168,12 +169,13 @@ int interact_with_user (int argc, char **argv,
       "  \t HC         - Han-Carlson adder.\n" <<
       "  \t BK         - Brent-Kung adder.\n" <<
       "  \t JSkCond    - J. Sklansky - Conditional adder.\n" <<
-      "  -in1size <arg> : Size of the first operand. <arg> should be a positive integer: \n" <<
-      "  -in2size <arg> : Size of the second operand. <arg> should be a positive integer: \n" <<
-      "  -in3size <arg> : Size of the third operand, when relevant. <arg> should be a positive integer: \n" <<
-      "  -outsize <arg> : Size of the output. Useful when user wants to truncate the result. <arg> should be a positive integer: \n" <<
+      "  -in1size <arg>  : Size of the first operand. <arg> should be a positive integer: \n" <<
+      "  -in2size <arg>  : Size of the second operand. <arg> should be a positive integer: \n" <<
+      "  -in3size <arg>  : Size of the third operand, when relevant. <arg> should be a positive integer: \n" <<
+      "  -outsize <arg>  : Size of the output. Useful when user wants to truncate the result. <arg> should be a positive integer: \n" <<
       "  -shift <arg>    : Number of bits that will be dropped from the LSB portion (right shift output). <arg> should be a positive integer: \n" <<
-      "  -dotsize <arg> : Determines how many vector pairs should be in the dot product design. <arg> should be a positive integer greater than 1: \n" <<
+      "  -dotsize <arg>  : Determines how many vector pairs should be in the dot product design. <arg> should be a positive integer greater than 1: \n" <<
+      "  -allowXes <arg> : Verilog supports 4-valued logic (0,1,X, and Z). This generator may create designs that has Xes in it. This may be a difficult problem for some verification tools. If you want a more realistic design and want to challange a cerification problem, allow 4-valued logic below. If you want to keep it at 2-valued (0,1) logic, you have the option to do so. <arg> should be true or false.  \n" <<
       endl;
 
     return 2;
@@ -189,9 +191,11 @@ int interact_with_user (int argc, char **argv,
   dot_size = -1;
   out_size = -1;
   shift_amount = 0;
+  allowXes = false;
   bool in1in2size_is_in_params = false;
   bool out_size_is_in_params = false;
   bool shift_is_in_params = false;
+  bool allowXes_in_params = false;
 
   file_name_prefix = "";
   main_type = "";
@@ -222,8 +226,11 @@ int interact_with_user (int argc, char **argv,
 
   }
 
-  if (argc > 1)
+  if (argc > 1){
     shift_is_in_params = true;
+    allowXes_in_params = true;
+    
+  }
 
 
   for (int i = 1; i+1 < argc; i+=2){
@@ -260,6 +267,13 @@ int interact_with_user (int argc, char **argv,
     }else if (strcmp(argv[i], "-shift") == 0){
       sscanf(argv[i+1], "%d", &shift_amount);
       shift_is_in_params = true;
+    }else if (strcmp(argv[i], "-allowXes") == 0){
+      char b[8];
+      if ( sscanf(argv[i+1],"%[TtRrUuEe]",b))
+	allowXes = true;
+      else
+	allowXes = false;
+      allowXes_in_params = true;
     }else if (strcmp(argv[i], "-def") == 0)
       i--;
     else if (strcmp(argv[i], "-filenameprefix") == 0){
@@ -617,6 +631,27 @@ int interact_with_user (int argc, char **argv,
     else shift_amount = 0;
   }
 
+
+   while (!allowXes_in_params){
+     cout << "Verilog supports 4-valued logic (0,1,X, and Z). This generator may create designs that has Xes in it. This may be a difficult problem for some verification tools. ";
+     cout << "If you want a more realistic design and want to challange a cerification problem, allow 4-valued logic below. If you want to keep it at 2-valued (0,1) logic, you have the option to do so" <<endl;
+     cout << "1. Yes, allow Xes" << endl;
+     cout << "2. No, do not allow Xes" << endl;
+
+     cout << "Do you want to allow Xes in the design? ";
+     string s = "";
+     cin >> s;
+      if (s.compare ("1") == 0) {
+	allowXes = true;
+        break;
+      }else  if (s.compare ("2") == 0) {
+        pp_encoding = signed_mult ? "SB2" : "UB2";
+	allowXes = false;
+        break;
+      }else
+	cout << "Invalid option, please try again" << endl;  
+  }
+
   if (shift_amount > out_size - 1 ){
     cout << "Given shift_amount is too large. Shrinking to " << out_size - 1 << endl;
     shift_amount = out_size - 1;
@@ -690,6 +725,7 @@ int create_mult ( int  in1_size,
                   int  in2_size,
                   int  out_size,
 		  int  shift_amount,
+		  bool allowXes,
                   string final_stage_adder,
                   string pp_encoding,
                   string tree,
@@ -706,7 +742,7 @@ int create_mult ( int  in1_size,
   module_name = tree + "_" + pp_encoding + "_"
     + (create_fin_adder?final_stage_adder + "_" : "")
     + to_string(in1_size) + "x"
-    + to_string(in2_size);
+    + to_string(in2_size) + (allowXes ? "" : "_noX");
     
   if (create_fin_adder){
 
@@ -773,41 +809,46 @@ int create_mult ( int  in1_size,
 
   } else if (pp_encoding.compare ("SSP") == 0) {
     create_signedpp (in1_size, in2_size, pp_matrix,
-                     pp_dim1, pp_dim2, extra_ones_indices, verilog);
+                     pp_dim1, pp_dim2, extra_ones_indices,
+		     verilog);
   } else if (pp_encoding.compare ("SB4") == 0) {
     create_br4pp (in1_size, in2_size, true, pp_matrix,
-                  pp_dim1, pp_dim2, extra_ones_indices, verilog);
+                  pp_dim1, pp_dim2, extra_ones_indices,
+		  allowXes, verilog);
     // create_signedbr4pp (in1_size, in2_size, pp_matrix,
     //                     pp_dim1, pp_dim2, verilog);
   } else if (pp_encoding.compare ("SB8") == 0) {
     create_br8pp (in1_size, in2_size, true, pp_matrix,
                   pp_dim1, pp_dim2, extra_ones_indices,
-		  final_stage_adder, pp_adder_size, verilog);
+		  final_stage_adder, pp_adder_size,
+		  allowXes, verilog);
   } else if (pp_encoding.compare ("UB8") == 0) {
     create_br8pp (in1_size, in2_size, false, pp_matrix,
                   pp_dim1, pp_dim2, extra_ones_indices,
-		  final_stage_adder, pp_adder_size, verilog);
+		  final_stage_adder, pp_adder_size,
+		  allowXes, verilog);
   } else if (pp_encoding.compare ("SB16") == 0) {
     create_br16pp (in1_size, in2_size, true, pp_matrix,
                    pp_dim1, pp_dim2, extra_ones_indices,
-		   final_stage_adder, pp_adder_size, verilog);
+		   final_stage_adder, pp_adder_size,
+		   allowXes, verilog);
   }  else if (pp_encoding.compare ("UB16") == 0) {
     create_br16pp (in1_size, in2_size, false, pp_matrix,
                    pp_dim1, pp_dim2, extra_ones_indices,
-		   final_stage_adder, pp_adder_size, verilog);
+		   final_stage_adder, pp_adder_size, allowXes, verilog);
   } else if (pp_encoding.compare ("SB2") == 0) {
     create_br2pp (in1_size, in2_size, true, pp_matrix,
-                  pp_dim1, pp_dim2, extra_ones_indices, verilog);
+                  pp_dim1, pp_dim2, extra_ones_indices, allowXes, verilog);
     // create_signedbr2pp (in1_size, in2_size, pp_matrix,
     //                     pp_dim1, pp_dim2, verilog);
   } else if (pp_encoding.compare ("UB2") == 0) {
     create_br2pp (in1_size, in2_size, false, pp_matrix,
-                  pp_dim1, pp_dim2, extra_ones_indices, verilog);
+                  pp_dim1, pp_dim2, extra_ones_indices, allowXes, verilog);
     // create_unsignedbr2pp (in1_size, in2_size, pp_matrix,
     //                       pp_dim1, pp_dim2, verilog);
   } else if (pp_encoding.compare ("UB4") == 0) {
     create_br4pp (in1_size, in2_size, false, pp_matrix,
-                  pp_dim1, pp_dim2, extra_ones_indices, verilog);
+                  pp_dim1, pp_dim2, extra_ones_indices, allowXes, verilog);
     // create_unsignedbr4pp (in1_size, in2_size, pp_matrix,
     //                       pp_dim1, pp_dim2, verilog);
   } else {
@@ -899,6 +940,7 @@ int create_four_mult (int  in_size,
                       int  in3_size,
                       int  out_size,
 		      int  shift_amount,
+		      bool allowXes,
                       string final_stage_adder,
                       string pp_encoding,
                       string tree,
@@ -924,7 +966,8 @@ int create_four_mult (int  in_size,
     + final_stage_adder + "_"
     + to_string(in1_size) + "x"
     + to_string(in2_size)
-    + (in3_size>0 ? "_plus_" + to_string(in3_size) : ""); 
+    + (in3_size>0 ? "_plus_" + to_string(in3_size) : "")
+     + (allowXes ? "" : "_noX"); 
 
   int maxsize = max(in1_size + in2_size + (in3_size>0?1:0), in3_size);
   
@@ -977,6 +1020,7 @@ int create_four_mult (int  in_size,
                             one_mult_in_size,
                             one_mult_out_size,
 			    0,
+			    allowXes,
                             final_stage_adder,
                             pp_encoding,
                             tree,
@@ -1276,6 +1320,7 @@ int create_mac (int  in1_size,
                 int  in3_size,
                 int  out_size,
 		int  shift_amount,
+		bool allowXes,
                 string final_stage_adder,
                 string pp_encoding,
                 string tree,
@@ -1295,7 +1340,7 @@ int create_mac (int  in1_size,
     + final_stage_adder + "_"
     + to_string(in1_size) + "x"
     + to_string(in2_size) + "_plus_"
-    + to_string(in3_size)
+    + to_string(in3_size) + (allowXes ? "" : "_noX")
     + "_" + to_string(out_size-1) + "to" + to_string(shift_amount);
 
   verilog.push ("");
@@ -1336,6 +1381,7 @@ int create_mac (int  in1_size,
                             in2_size,
                             mult_out_size,
 			    0,
+			    allowXes,
                             final_stage_adder,
                             pp_encoding,
                             tree,
@@ -1484,6 +1530,7 @@ int create_dot (int  in1_size,
                 int  dot_size,
                 int  out_size,
 		int  shift_amount,
+		bool allowXes,
                 string final_stage_adder,
                 string pp_encoding,
                 string tree,
@@ -1507,6 +1554,7 @@ int create_dot (int  in1_size,
     + to_string(in1_size) + "x"
     + to_string(in2_size)
     + (in3_size>0 ? "_plus_" + to_string(in3_size) : "")
+    + (allowXes ? "" : "_noX")
     + "_" + to_string(out_size-1) + "to" + to_string(shift_amount);
 
   verilog.push ("");
@@ -1554,6 +1602,7 @@ int create_dot (int  in1_size,
                             in2_size,
                             mult_out_size,
 			    0,
+			    allowXes,
                             final_stage_adder,
                             pp_encoding,
                             tree,
@@ -1756,6 +1805,7 @@ int main(int argc, char **argv) {
   int  dot_size;
   int  out_size;
   int  shift_amount=0;
+  bool allowXes = false;
   string file_name_prefix = "";
   string final_stage_adder;
   string pp_encoding;
@@ -1765,7 +1815,7 @@ int main(int argc, char **argv) {
   bool ha_fa_with_gates;
   queue<string> verilog;
 
-  int retval = interact_with_user(argc, argv, in1_size, in2_size, in3_size, dot_size, out_size, shift_amount, signed_mult, ha_fa_with_gates, final_stage_adder,
+  int retval = interact_with_user(argc, argv, in1_size, in2_size, in3_size, dot_size, out_size, shift_amount, allowXes, signed_mult, ha_fa_with_gates, final_stage_adder,
                                   pp_encoding, tree, main_type,
 				  file_name_prefix);
 
@@ -1786,7 +1836,7 @@ int main(int argc, char **argv) {
     bool** zeros_in_output = NULL;
 
     retval0 = create_mult(in1_size, in2_size,
-                          out_size, shift_amount,
+                          out_size, shift_amount, allowXes,
                           final_stage_adder,
                           pp_encoding,
                           tree,
@@ -1799,7 +1849,7 @@ int main(int argc, char **argv) {
   } else if (main_type.compare("FourMult") == 0) {
 
     create_four_mult (in1_size, in3_size,
-                      out_size, shift_amount,
+                      out_size, shift_amount, allowXes,
                       final_stage_adder,
                       pp_encoding,
                       tree,
@@ -1811,7 +1861,7 @@ int main(int argc, char **argv) {
     create_mac (in1_size,
                 in2_size,
                 in3_size,
-                out_size, shift_amount,
+                out_size, shift_amount, allowXes,
                 final_stage_adder,
                 pp_encoding,
                 tree,
@@ -1823,7 +1873,7 @@ int main(int argc, char **argv) {
                 in2_size,
                 in3_size,
                 dot_size,
-                out_size, shift_amount,
+                out_size, shift_amount, allowXes,
                 final_stage_adder,
                 pp_encoding,
                 tree,

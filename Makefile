@@ -21,11 +21,11 @@ adders.o :  src/adders.cpp src/adders.h
 
 examples : multgen.o
 	@rm -rf examples/*.sv examples/*~; mkdir -p examples; cd examples;\
-	../multgen -type StandAlone -tree DT -pp UB16 -adder KS -in1size 16 -in2size 16;\
-	../multgen -type StandAlone -tree DT -pp SB4 -adder HC -in1size 8 -in2size 8 -outsize 12;\
-	../multgen -type FourMult -tree c42 -pp SB4 -adder JSkCond -in1size 16 -outsize 16;\
-	../multgen -type MAC -tree WT -pp SB8 -adder LF -in1size 8 -in2size 10 -in3size 6;\
-	../multgen -type DOT -tree DT -pp UB4 -adder LF -in1size 8 -in2size 8 -dotsize 4 -in3size 10 -outsize 10;\
-	../multgen -type FourMult -tree DT -pp SSP -adder RP -in1size 16 -in2size 16;\
-	../multgen -type FourMult -tree DT -pp SB16 -adder JSkCond -in1size 12 -in2size 12 -outsize 16 -shift 8;\
+	../multgen -type StandAlone -tree DT -pp UB16 -adder KS -in1size 16 -in2size 16 -allowXes True;\
+	../multgen -type StandAlone -tree DT -pp SB4 -adder HC -in1size 8 -in2size 8 -outsize 12 -allowXes True;\
+	../multgen -type FourMult -tree c42 -pp SB4 -adder JSkCond -in1size 16 -outsize 16 -allowXes True;\
+	../multgen -type MAC -tree WT -pp SB8 -adder LF -in1size 8 -in2size 10 -in3size 6 -allowXes True;\
+	../multgen -type DOT -tree DT -pp UB4 -adder LF -in1size 8 -in2size 8 -dotsize 4 -in3size 10 -outsize 10 -allowXes True;\
+	../multgen -type FourMult -tree DT -pp SSP -adder RP -in1size 16 -in2size 16 -allowXes True;\
+	../multgen -type FourMult -tree DT -pp SB16 -adder JSkCond -in1size 12 -in2size 12 -outsize 16 -shift 8 -allowXes True;\
 	echo	 "Examples are created in examples/."

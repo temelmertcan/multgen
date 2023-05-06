@@ -175,7 +175,7 @@ int interact_with_user (int argc, char **argv,
       "  -outsize <arg>  : Size of the output. Useful when user wants to truncate the result. <arg> should be a positive integer: \n" <<
       "  -shift <arg>    : Number of bits that will be dropped from the LSB portion (right shift output). <arg> should be a positive integer: \n" <<
       "  -dotsize <arg>  : Determines how many vector pairs should be in the dot product design. <arg> should be a positive integer greater than 1: \n" <<
-      "  -allowXes <arg> : Verilog supports 4-valued logic (0,1,X, and Z). This generator may create designs that has Xes in it. This may be a difficult problem for some verification tools. If you want a more realistic design and want to challange a cerification problem, allow 4-valued logic below. If you want to keep it at 2-valued (0,1) logic, you have the option to do so. <arg> should be true or false.  \n" <<
+      "  -allowXes <arg> : Verilog models circuits using 4-valued logic (0,1,X, and Z). This generator may create designs that has Xes in it. This may be a difficult problem for some verification tools. If you want a more realistic design and want to challange a verification tool, allow 4-valued logic below. If you want to keep it at 2-valued (0,1) logic, you have the option to do so. <arg> should be true or false.  \n" <<
       endl;
 
     return 2;
@@ -633,8 +633,8 @@ int interact_with_user (int argc, char **argv,
 
 
    while (!allowXes_in_params){
-     cout << "Verilog supports 4-valued logic (0,1,X, and Z). This generator may create designs that has Xes in it. This may be a difficult problem for some verification tools. ";
-     cout << "If you want a more realistic design and want to challange a cerification problem, allow 4-valued logic below. If you want to keep it at 2-valued (0,1) logic, you have the option to do so" <<endl;
+     cout << "Verilog models circuit using 4-valued logic (0,1,X, and Z). This generator may create designs that has Xes in it. This may be a difficult problem for some verification tools. ";
+     cout << "If you want a more realistic design and want to challange a verification tool, allow 4-valued logic below. If you want to keep it at 2-valued (0,1) logic, you have the option to do so" <<endl;
      cout << "1. Yes, allow Xes" << endl;
      cout << "2. No, do not allow Xes" << endl;
 
@@ -1357,11 +1357,11 @@ int create_mac (int  in1_size,
   verilog.push("outdent");
   verilog.push("");
   string signed_str = signed_mult ? "signed'" : "unsigned'";
-  if (shift_amount>0)
-    verilog.push("assign spec_res["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"] = ("
-		 +signed_str+"(IN1) * "+signed_str+"(IN2) + "+signed_str+"(IN3))" +
-		 "["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"];");
-  else
+  if (shift_amount>0){
+    verilog.push("wire  ["  + to_string(out_size-1) +  ":0] tmp_res;");
+    verilog.push("assign tmp_res = ("+signed_str+"(IN1) * "+signed_str+"(IN2) + "+signed_str+"(IN3));");
+    verilog.push("assign spec_res["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"] = tmp_res["  + to_string(out_size-1) +  ":"+to_string(shift_amount)+"];");
+  }else
     verilog.push("assign spec_res = "+signed_str+"(IN1) * "+signed_str+"(IN2) + "+signed_str+"(IN3);");
 
   verilog.push(module_name + " mult(IN1, IN2," + (in3_size>0 ? " IN3," : "")+" design_res);");

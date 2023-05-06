@@ -1,0 +1,6 @@
+
+
+(include-book "projects/rp-rewriter/portcullis" :dir :system)
+
+;; cert-flags: ? t :ttags :all :skip-proofs-okp t
+; cert_param: (non-acl2r)

@@ -38,37 +38,37 @@
 
 
 // Specification module to help understand what the design implements.
-module Merged_c42_SB4_JSkCond_16x16_14to0_spec (
-        input logic [15:0] IN1,
-        input logic [15:0] IN2,
-        input logic [0:0] IN3, //redundant
-        output logic design_is_correct, // is set to 1 iff the output of Merged_c42_SB4_JSkCond_16x16_14to0  matches its spec.
-        output logic [14:0] design_res,
-        output logic [14:0] spec_res);
+module MAC_c42_SB4_JSkCond_10x15_plus_15_19to10_spec (
+        input logic [9:0] IN1,
+        input logic [14:0] IN2,
+        input logic [14:0] IN3,
+        output logic design_is_correct, // is set to 1 iff the output of MAC_c42_SB4_JSkCond_10x15_plus_15_19to10  matches its spec.
+        output logic [19:10] design_res,
+        output logic [19:10] spec_res);
     
-    assign spec_res = signed'(IN1) * signed'(IN2) ;
-    Merged_c42_SB4_JSkCond_16x16_14to0 mult(IN1, IN2, design_res);
+    wire  [19:0] tmp_res;
+    assign tmp_res = (signed'(IN1) * signed'(IN2) + signed'(IN3));
+    assign spec_res[19:10] = tmp_res[19:10];
+    MAC_c42_SB4_JSkCond_10x15_plus_15_19to10 mult(IN1, IN2, IN3, design_res);
     assign design_is_correct = ((spec_res == design_res) ? 1 : 0);
     
 endmodule
 
-
-
-module c42_SB4_9x9(
-        input logic [8:0] IN1,
-        input logic [8:0] IN2,
-        output logic [14:0] result0,
-        output logic [14:0] result1);
+module c42_SB4_10x15(
+        input logic [9:0] IN1,
+        input logic [14:0] IN2,
+        output logic [19:0] result0,
+        output logic [19:0] result1);
     
     
 // Creating Partial Products 
 
-    wire [8:0] mult = IN1;
-    wire [8:0] mcand = IN2;
-    wire [9:0] mcand_1x;
-    wire [9:0] mcand_2x;
-    assign mcand_1x = {{1{mcand[8]}},  mcand};
-    assign mcand_2x = {{0{mcand[8]}},  mcand, 1'b0};
+    wire [9:0] mult = IN1;
+    wire [14:0] mcand = IN2;
+    wire [15:0] mcand_1x;
+    wire [15:0] mcand_2x;
+    assign mcand_1x = {{1{mcand[14]}},  mcand};
+    assign mcand_2x = {{0{mcand[14]}},  mcand, 1'b0};
     
     // Booth Radix-4 Partial Products. Multiplier selectors: mult[1] mult[0] 1'b0
     wire logic select_0_0, select_e_0, select_2x_0, tcomp0, select_ne_0, select_n2x_0;
@@ -77,7 +77,7 @@ module c42_SB4_9x9(
     assign select_ne_0 = mult[1] &  (mult[0] ^ 1'b0);
     assign select_2x_0 = (~ mult[1]) & mult[0] & 1'b0;
     assign select_n2x_0 = mult[1] & (~ mult[0]) & (~ 1'b0);
-    reg [9:0] pp_0;
+    reg [15:0] pp_0;
     always @(*) begin
        case (1'b1)
           select_0_0   : pp_0 = 0; 
@@ -86,7 +86,7 @@ module c42_SB4_9x9(
           select_n2x_0 : pp_0 = (~ mcand_2x); 
           select_ne_0  : pp_0 = (~ mcand_1x); 
        endcase 
-       pp_0[9] = ~pp_0[9]; // flip the MSB 
+       pp_0[15] = ~pp_0[15]; // flip the MSB 
     end
     assign tcomp0 =  select_n2x_0 | select_ne_0;
     
@@ -97,7 +97,7 @@ module c42_SB4_9x9(
     assign select_ne_1 = mult[3] &  (mult[2] ^ mult[1]);
     assign select_2x_1 = (~ mult[3]) & mult[2] & mult[1];
     assign select_n2x_1 = mult[3] & (~ mult[2]) & (~ mult[1]);
-    reg [9:0] pp_1;
+    reg [15:0] pp_1;
     always @(*) begin
        case (1'b1)
           select_0_1   : pp_1 = 0; 
@@ -106,7 +106,7 @@ module c42_SB4_9x9(
           select_n2x_1 : pp_1 = (~ mcand_2x); 
           select_ne_1  : pp_1 = (~ mcand_1x); 
        endcase 
-       pp_1[9] = ~pp_1[9]; // flip the MSB 
+       pp_1[15] = ~pp_1[15]; // flip the MSB 
     end
     assign tcomp1 =  select_n2x_1 | select_ne_1;
     
@@ -117,7 +117,7 @@ module c42_SB4_9x9(
     assign select_ne_2 = mult[5] &  (mult[4] ^ mult[3]);
     assign select_2x_2 = (~ mult[5]) & mult[4] & mult[3];
     assign select_n2x_2 = mult[5] & (~ mult[4]) & (~ mult[3]);
-    reg [9:0] pp_2;
+    reg [15:0] pp_2;
     always @(*) begin
        case (1'b1)
           select_0_2   : pp_2 = 0; 
@@ -126,7 +126,7 @@ module c42_SB4_9x9(
           select_n2x_2 : pp_2 = (~ mcand_2x); 
           select_ne_2  : pp_2 = (~ mcand_1x); 
        endcase 
-       pp_2[9] = ~pp_2[9]; // flip the MSB 
+       pp_2[15] = ~pp_2[15]; // flip the MSB 
     end
     assign tcomp2 =  select_n2x_2 | select_ne_2;
     
@@ -137,7 +137,7 @@ module c42_SB4_9x9(
     assign select_ne_3 = mult[7] &  (mult[6] ^ mult[5]);
     assign select_2x_3 = (~ mult[7]) & mult[6] & mult[5];
     assign select_n2x_3 = mult[7] & (~ mult[6]) & (~ mult[5]);
-    reg [9:0] pp_3;
+    reg [15:0] pp_3;
     always @(*) begin
        case (1'b1)
           select_0_3   : pp_3 = 0; 
@@ -146,18 +146,18 @@ module c42_SB4_9x9(
           select_n2x_3 : pp_3 = (~ mcand_2x); 
           select_ne_3  : pp_3 = (~ mcand_1x); 
        endcase 
-       pp_3[9] = ~pp_3[9]; // flip the MSB 
+       pp_3[15] = ~pp_3[15]; // flip the MSB 
     end
     assign tcomp3 =  select_n2x_3 | select_ne_3;
     
-    // Booth Radix-4 Partial Products. Multiplier selectors: mult[8] mult[8] mult[7]
+    // Booth Radix-4 Partial Products. Multiplier selectors: mult[9] mult[8] mult[7]
     wire logic select_0_4, select_e_4, select_2x_4, tcomp4, select_ne_4, select_n2x_4;
-    assign select_0_4 =  &{mult[8], mult[8], mult[7]} | ~|{mult[8], mult[8], mult[7]};
-    assign select_e_4 = ((~ mult[8]) & (mult[8] ^ mult[7]));
-    assign select_ne_4 = mult[8] &  (mult[8] ^ mult[7]);
-    assign select_2x_4 = (~ mult[8]) & mult[8] & mult[7];
-    assign select_n2x_4 = mult[8] & (~ mult[8]) & (~ mult[7]);
-    reg [9:0] pp_4;
+    assign select_0_4 =  &{mult[9], mult[8], mult[7]} | ~|{mult[9], mult[8], mult[7]};
+    assign select_e_4 = ((~ mult[9]) & (mult[8] ^ mult[7]));
+    assign select_ne_4 = mult[9] &  (mult[8] ^ mult[7]);
+    assign select_2x_4 = (~ mult[9]) & mult[8] & mult[7];
+    assign select_n2x_4 = mult[9] & (~ mult[8]) & (~ mult[7]);
+    reg [15:0] pp_4;
     always @(*) begin
        case (1'b1)
           select_0_4   : pp_4 = 0; 
@@ -166,18 +166,18 @@ module c42_SB4_9x9(
           select_n2x_4 : pp_4 = (~ mcand_2x); 
           select_ne_4  : pp_4 = (~ mcand_1x); 
        endcase 
-       pp_4[9] = ~pp_4[9]; // flip the MSB 
+       pp_4[15] = ~pp_4[15]; // flip the MSB 
     end
     assign tcomp4 =  select_n2x_4 | select_ne_4;
     
     // The values to be summed in the summation tree, from LSB (left) to MSB:
-     // pp_0[0] pp_0[1] pp_0[2] pp_0[3] pp_0[4] pp_0[5] pp_0[6] pp_0[7] pp_0[8] pp_0[9]   --      --      --      --      --      --      --      --    
-     //   --      --    pp_1[0] pp_1[1] pp_1[2] pp_1[3] pp_1[4] pp_1[5] pp_1[6] pp_1[7] pp_1[8] pp_1[9]   --      --      --      --      --      --    
-     //   --      --      --      --    pp_2[0] pp_2[1] pp_2[2] pp_2[3] pp_2[4] pp_2[5] pp_2[6] pp_2[7] pp_2[8] pp_2[9]   --      --      --      --    
-     //   --      --      --      --      --      --    pp_3[0] pp_3[1] pp_3[2] pp_3[3] pp_3[4] pp_3[5] pp_3[6] pp_3[7] pp_3[8] pp_3[9]   --      --    
-     //   --      --      --      --      --      --      --      --    pp_4[0] pp_4[1] pp_4[2] pp_4[3] pp_4[4] pp_4[5] pp_4[6] pp_4[7] pp_4[8] pp_4[9] 
-     // tcomp0    --    tcomp1    --    tcomp2    --    tcomp3    --    tcomp4    --      --      --      --      --      --      --      --      --    
-     //   --      --      --      --      --      --      --      --      --      --      --      --      --      --      --      --      --      --    
+     // pp_0[0]  pp_0[1]  pp_0[2]  pp_0[3]  pp_0[4]  pp_0[5]  pp_0[6]  pp_0[7]  pp_0[8]  pp_0[9]  pp_0[10] pp_0[11] pp_0[12] pp_0[13] pp_0[14] pp_0[15]   --       --       --       --       --       --       --       --       --     
+     //   --       --     pp_1[0]  pp_1[1]  pp_1[2]  pp_1[3]  pp_1[4]  pp_1[5]  pp_1[6]  pp_1[7]  pp_1[8]  pp_1[9]  pp_1[10] pp_1[11] pp_1[12] pp_1[13] pp_1[14] pp_1[15]   --       --       --       --       --       --       --     
+     //   --       --       --       --     pp_2[0]  pp_2[1]  pp_2[2]  pp_2[3]  pp_2[4]  pp_2[5]  pp_2[6]  pp_2[7]  pp_2[8]  pp_2[9]  pp_2[10] pp_2[11] pp_2[12] pp_2[13] pp_2[14] pp_2[15]   --       --       --       --       --     
+     //   --       --       --       --       --       --     pp_3[0]  pp_3[1]  pp_3[2]  pp_3[3]  pp_3[4]  pp_3[5]  pp_3[6]  pp_3[7]  pp_3[8]  pp_3[9]  pp_3[10] pp_3[11] pp_3[12] pp_3[13] pp_3[14] pp_3[15]   --       --       --     
+     //   --       --       --       --       --       --       --       --     pp_4[0]  pp_4[1]  pp_4[2]  pp_4[3]  pp_4[4]  pp_4[5]  pp_4[6]  pp_4[7]  pp_4[8]  pp_4[9]  pp_4[10] pp_4[11] pp_4[12] pp_4[13] pp_4[14] pp_4[15]   --     
+     // tcomp0     --     tcomp1     --     tcomp2     --     tcomp3     --     tcomp4     --       --       --       --       --       --       --       --       --       --       --       --       --       --       --       --     
+     //   --       --       --       --       --       --       --       --       --       --       --       --       --       --       --       --       --       --       --       --       --       --       --       --       --     
     
 // Creating Summation Tree 
 
@@ -185,26 +185,26 @@ module c42_SB4_9x9(
     // 4to2 compressor tree Stage 1
     
     wire cout0;
-    wire [8:0] sum0;
-    wire [8:0] carry0;
-    Four2Two #(9) cmp42_0(
-            .in1({pp_3[8], pp_2[9:8], pp_1[9:8], pp_0[9:6]}),
-            .in2({pp_4[6], pp_3[7:6], pp_2[7:6], pp_1[7:4]}),
-            .in3({1'b0, pp_4[5:4], pp_3[5:4], pp_2[5:2]}),
-            .in4({3'b0, pp_4[3:2], pp_3[3:0]}),
+    wire [13:0] sum0;
+    wire [13:0] carry0;
+    Four2Two #(14) cmp42_0(
+            .in1({pp_2[15:14], pp_1[15:14], pp_0[15:6]}),
+            .in2({pp_3[13:12], pp_2[13:12], pp_1[13:4]}),
+            .in3({pp_4[11:10], pp_3[11:10], pp_2[11:2]}),
+            .in4({2'b0, pp_4[9:8], pp_3[9:0]}),
             .cin(tcomp3),
             .sum(sum0),
             .carry(carry0),
             .cout(cout0));
     
     wire cout1;
-    wire [1:0] sum1;
-    wire [1:0] carry1;
-    Four2Two #(2) cmp42_1(
-            .in1({pp_4[1:0]}),
-            .in2({1'b0, tcomp4}),
-            .in3({2'b0}),
-            .in4({2'b0}),
+    wire [7:0] sum1;
+    wire [7:0] carry1;
+    Four2Two #(8) cmp42_1(
+            .in1({pp_4[7:0]}),
+            .in2({7'b0, tcomp4}),
+            .in3({8'b0}),
+            .in4({8'b0}),
             .cin(1'b0),
             .sum(sum1),
             .carry(carry1),
@@ -213,112 +213,70 @@ module c42_SB4_9x9(
     // 4to2 compressor tree Stage 2
     
     wire cout2;
-    wire [12:0] sum2;
-    wire [12:0] carry2;
-    Four2Two #(13) cmp42_2(
-            .in1({carry0[7:0], sum0[0], pp_0[5:2]}),
-            .in2({sum0[8:1], 1'b0, pp_1[3:0]}),
-            .in3({4'b0, carry1[1:0], sum1[0], 2'b0, pp_2[1:0], 1'b0, tcomp1}),
-            .in4({4'b0, cout1, sum1[1], 4'b0, tcomp2, 2'b0}),
+    wire [17:0] sum2;
+    wire [17:0] carry2;
+    Four2Two #(18) cmp42_2(
+            .in1({carry0[12:0], sum0[0], pp_0[5:2]}),
+            .in2({sum0[13:1], 1'b0, pp_1[3:0]}),
+            .in3({3'b0, carry1[7:0], sum1[0], 2'b0, pp_2[1:0], 1'b0, tcomp1}),
+            .in4({3'b0, cout1, sum1[7:1], 4'b0, tcomp2, 2'b0}),
             .cin(1'b0),
             .sum(sum2),
             .carry(carry2),
             .cout(cout2));
     
     
-    assign result0[14:0] = {carry2[11], carry2[10], carry2[9], carry2[8], carry2[7], carry2[6], carry2[5], carry2[4], carry2[3], carry2[2], carry2[1], carry2[0], sum2[0], pp_0[1], pp_0[0] };
-    assign result1[14:0] = {sum2[12], sum2[11], sum2[10], sum2[9], sum2[8], sum2[7], sum2[6], sum2[5], sum2[4], sum2[3], sum2[2], sum2[1], 1'b0, 1'b0, tcomp0 };
+    assign result0[19:0] = {carry2[16], carry2[15], carry2[14], carry2[13], carry2[12], carry2[11], carry2[10], carry2[9], carry2[8], carry2[7], carry2[6], carry2[5], carry2[4], carry2[3], carry2[2], carry2[1], carry2[0], sum2[0], pp_0[1], pp_0[0] };
+    assign result1[19:0] = {sum2[17], sum2[16], sum2[15], sum2[14], sum2[13], sum2[12], sum2[11], sum2[10], sum2[9], sum2[8], sum2[7], sum2[6], sum2[5], sum2[4], sum2[3], sum2[2], sum2[1], 1'b0, 1'b0, tcomp0 };
 endmodule
 
 
 
-module Merged_c42_SB4_JSkCond_16x16_14to0(
-        input logic [15:0] IN1,
-        input logic [15:0] IN2,
-        output logic [14:0] result);
-    wire logic [14:0] m1_0;
-    wire logic [14:0] m1_1;
-    wire logic [14:0] m2_0;
-    wire logic [14:0] m2_1;
-    wire logic [14:0] m3_0;
-    wire logic [14:0] m3_1;
-    wire logic [14:0] m4_0;
-    wire logic [14:0] m4_1;
-    
-    c42_SB4_9x9 m1 ({1'b0, IN1[7:0]}, {1'b0, IN2[7:0]}, m1_0, m1_1);
-    c42_SB4_9x9 m2 ({IN2[15], IN2[15:8]}, {1'b0, IN1[7:0]}, m2_0, m2_1);
-    c42_SB4_9x9 m3 ({IN1[15], IN1[15:8]}, {1'b0, IN2[7:0]}, m3_0, m3_1);
-    c42_SB4_9x9 m4 ({IN1[15],IN1[15:8]}, {IN2[15], IN2[15:8]}, m4_0, m4_1);
+module MAC_c42_SB4_JSkCond_10x15_plus_15_19to10(
+        input logic [9:0] IN1,
+        input logic [14:0] IN2,
+        input logic [14:0] IN3,
+        output logic [19:10] result);
+    wire logic [19:0] m1_0;
+    wire logic [19:0] m1_1;
+    c42_SB4_10x15 m1 (IN1[9:0], IN2[14:0], m1_0, m1_1);
     
     
     // The values to be summed in the summation tree, from LSB (left) to MSB:
-     // m1_0[0]  m1_0[1]  m1_0[2]  m1_0[3]  m1_0[4]  m1_0[5]  m1_0[6]  m1_0[7]  m1_0[8]  m1_0[9]  m1_0[10] m1_0[11] m1_0[12] m1_0[13] m1_0[14] 
-     // m1_1[0]    --       --     m1_1[3]  m1_1[4]  m1_1[5]  m1_1[6]  m1_1[7]  m1_1[8]  m1_1[9]  m1_1[10] m1_1[11] m1_1[12] m1_1[13] m1_1[14] 
-     //   --       --       --       --       --       --       --       --     m2_0[0]  m2_0[1]  m2_0[2]  m2_0[3]  m2_0[4]  m2_0[5]  m2_0[6]  
-     //   --       --       --       --       --       --       --       --     m2_1[0]    --       --     m2_1[3]  m2_1[4]  m2_1[5]  m2_1[6]  
-     //   --       --       --       --       --       --       --       --     m3_0[0]  m3_0[1]  m3_0[2]  m3_0[3]  m3_0[4]  m3_0[5]  m3_0[6]  
-     //   --       --       --       --       --       --       --       --     m3_1[0]    --       --     m3_1[3]  m3_1[4]  m3_1[5]  m3_1[6]  
-     //   --       --       --       --       --       --       --       --       --       --       --       --       --       --       --     
-     //   --       --       --       --       --       --       --       --       --       --       --       --       --       --       --     
-     //   --       --       --       --       --       --       --       --       --       --       --       --       --       --       --     
-     //   --       --       --       --       --       --       --       --       --     1'b1     1'b1       --     1'b1       --     1'b1     
+     // m1_0[0]  m1_0[1]  m1_0[2]  m1_0[3]  m1_0[4]  m1_0[5]  m1_0[6]  m1_0[7]  m1_0[8]  m1_0[9]  m1_0[10] m1_0[11] m1_0[12] m1_0[13] m1_0[14] m1_0[15] m1_0[16] m1_0[17] m1_0[18] m1_0[19] 
+     // m1_1[0]    --       --     m1_1[3]  m1_1[4]  m1_1[5]  m1_1[6]  m1_1[7]  m1_1[8]  m1_1[9]  m1_1[10] m1_1[11] m1_1[12] m1_1[13] m1_1[14] m1_1[15] m1_1[16] m1_1[17] m1_1[18] m1_1[19] 
+     // IN3[0]   IN3[1]   IN3[2]   IN3[3]   IN3[4]   IN3[5]   IN3[6]   IN3[7]   IN3[8]   IN3[9]   IN3[10]  IN3[11]  IN3[12]  IN3[13]  ~IN3[14]   --       --       --       --       --     
+     //   --       --       --       --       --       --       --       --       --       --       --       --       --       --     1'b1       --     1'b1       --     1'b1       --     
     
     // 4to2 compressor tree Stage 1
     
     wire cout0;
-    wire [6:0] sum0;
-    wire [6:0] carry0;
-    Four2Two #(7) cmp42_0(
-            .in1({m1_0[14:8]}),
-            .in2({m1_1[14:8]}),
-            .in3({m2_0[6:0]}),
-            .in4({m2_1[6:3], m3_0[2:1], m2_1[0]}),
-            .cin(m3_0[0]),
+    wire [19:0] sum0;
+    wire [19:0] carry0;
+    Four2Two #(20) cmp42_0(
+            .in1({m1_0[19:0]}),
+            .in2({m1_1[19:3], IN3[2:1], m1_1[0]}),
+            .in3({1'b0, 1'b1, 1'b0, 1'b1, 1'b0, ~IN3[14], IN3[13:3], 2'b0, IN3[0]}),
+            .in4({5'b0, 1'b1, 14'b0}),
+            .cin(1'b0),
             .sum(sum0),
             .carry(carry0),
             .cout(cout0));
     
-    wire cout1;
-    wire [3:0] sum1;
-    wire [3:0] carry1;
-    Four2Two #(4) cmp42_1(
-            .in1({m3_0[6:3]}),
-            .in2({m3_1[6:3]}),
-            .in3({1'b1, 1'b0, 1'b1, 1'b0}),
-            .in4({4'b0}),
-            .cin(1'b0),
-            .sum(sum1),
-            .carry(carry1),
-            .cout(cout1));
-    
-    // 4to2 compressor tree Stage 2
-    
-    wire cout2;
-    wire [5:0] sum2;
-    wire [5:0] carry2;
-    Four2Two #(6) cmp42_2(
-            .in1({carry0[5:2], 1'b1, 1'b1}),
-            .in2({sum0[6:3], carry0[1:0]}),
-            .in3({carry1[2:0], sum1[0], sum0[2:1]}),
-            .in4({sum1[3:1], 3'b0}),
-            .cin(1'b0),
-            .sum(sum2),
-            .carry(carry2),
-            .cout(cout2));
-    
-    logic [15:0] adder_result;
-    JSkCond_15 final_adder ({carry2[4], carry2[3], carry2[2], carry2[1], carry2[0], sum2[0], m3_1[0], m1_0[7], m1_0[6], m1_0[5], m1_0[4], m1_0[3], m1_0[2], m1_0[1], m1_0[0] }, {sum2[5], sum2[4], sum2[3], sum2[2], sum2[1], 1'b0, sum0[0], m1_1[7], m1_1[6], m1_1[5], m1_1[4], m1_1[3], 1'b0, 1'b0, m1_1[0] }, adder_result );
-    assign result[14:0] = adder_result[14:0];
+    logic [19:0] adder_result;
+    JSkCond_19 final_adder ({carry0[18], carry0[17], carry0[16], carry0[15], carry0[14], carry0[13], carry0[12], carry0[11], carry0[10], carry0[9], carry0[8], carry0[7], carry0[6], carry0[5], carry0[4], carry0[3], carry0[2], carry0[1], carry0[0] }, {sum0[19], sum0[18], sum0[17], sum0[16], sum0[15], sum0[14], sum0[13], sum0[12], sum0[11], sum0[10], sum0[9], sum0[8], sum0[7], sum0[6], sum0[5], sum0[4], sum0[3], sum0[2], sum0[1] }, adder_result );
+    assign result[19:10] = adder_result[18:9];
 
 endmodule
 
-module JSkCond_15 ( 
-        input logic [14:0] IN1,
-        input logic [14:0] IN2,
-        output logic [15:0] OUT);
+
+module JSkCond_19 ( 
+        input logic [18:0] IN1,
+        input logic [18:0] IN2,
+        output logic [19:0] OUT);
     
-    wire logic [14:0] p_0;
-    wire logic [14:0] g_0;
+    wire logic [18:0] p_0;
+    wire logic [18:0] g_0;
     assign g_0 = IN1 & IN2;
     assign p_0 = IN1 ^ IN2;
     
@@ -354,6 +312,14 @@ module JSkCond_15 (
     wire logic g_1_13;
     assign p_1_13 = p_0[13] & p_0[12];
     assign g_1_13 = (p_0[13] & g_0[12]) | g_0[13];
+    wire logic p_1_15;
+    wire logic g_1_15;
+    assign p_1_15 = p_0[15] & p_0[14];
+    assign g_1_15 = (p_0[15] & g_0[14]) | g_0[15];
+    wire logic p_1_17;
+    wire logic g_1_17;
+    assign p_1_17 = p_0[17] & p_0[16];
+    assign g_1_17 = (p_0[17] & g_0[16]) | g_0[17];
     
     // Stage 2 - prop from 1 to 2 per group.
     wire logic p_2_2;
@@ -384,6 +350,14 @@ module JSkCond_15 (
     wire logic g_2_14;
     assign p_2_14 = p_0[14] & p_1_13;
     assign g_2_14 = (p_0[14] & g_1_13) | g_0[14];
+    wire logic p_2_15;
+    wire logic g_2_15;
+    assign p_2_15 = p_1_15 & p_1_13;
+    assign g_2_15 = (p_1_15 & g_1_13) | g_1_15;
+    wire logic p_2_18;
+    wire logic g_2_18;
+    assign p_2_18 = p_0[18] & p_1_17;
+    assign g_2_18 = (p_0[18] & g_1_17) | g_0[18];
     
     // Stage 3 - prop from 1 to 4 per group.
     wire logic p_3_4;
@@ -414,6 +388,10 @@ module JSkCond_15 (
     wire logic g_3_14;
     assign p_3_14 = p_2_14 & p_2_11;
     assign g_3_14 = (p_2_14 & g_2_11) | g_2_14;
+    wire logic p_3_15;
+    wire logic g_3_15;
+    assign p_3_15 = p_2_15 & p_2_11;
+    assign g_3_15 = (p_2_15 & g_2_11) | g_2_15;
     
     // Stage 4 - prop from 1 to 8 per group.
     wire logic p_4_8;
@@ -444,6 +422,24 @@ module JSkCond_15 (
     wire logic g_4_14;
     assign p_4_14 = p_3_14 & p_3_7;
     assign g_4_14 = (p_3_14 & g_3_7) | g_3_14;
+    wire logic p_4_15;
+    wire logic g_4_15;
+    assign p_4_15 = p_3_15 & p_3_7;
+    assign g_4_15 = (p_3_15 & g_3_7) | g_3_15;
+    
+    // Stage 5 - prop from 1 to 16 per group.
+    wire logic p_5_16;
+    wire logic g_5_16;
+    assign p_5_16 = p_0[16] & p_4_15;
+    assign g_5_16 = (p_0[16] & g_4_15) | g_0[16];
+    wire logic p_5_17;
+    wire logic g_5_17;
+    assign p_5_17 = p_1_17 & p_4_15;
+    assign g_5_17 = (p_1_17 & g_4_15) | g_1_17;
+    wire logic p_5_18;
+    wire logic g_5_18;
+    assign p_5_18 = p_2_18 & p_4_15;
+    assign g_5_18 = (p_2_18 & g_4_15) | g_2_18;
     
     // JSkCondA postprocess 
     assign OUT[0] = p_0[0];
@@ -461,18 +457,22 @@ module JSkCond_15 (
     assign OUT[12] = p_0[12] ^ g_4_11;
     assign OUT[13] = p_0[13] ^ g_4_12;
     assign OUT[14] = p_0[14] ^ g_4_13;
-    assign OUT[15] = g_4_14;
+    assign OUT[15] = p_0[15] ^ g_4_14;
+    assign OUT[16] = p_0[16] ^ g_4_15;
+    assign OUT[17] = p_0[17] ^ g_5_16;
+    assign OUT[18] = p_0[18] ^ g_5_17;
+    assign OUT[19] = g_5_18;
 endmodule
 
-module JSkCond_15_spec (
-        input logic [14:0] IN1,
-        input logic [14:0] IN2,
+module JSkCond_19_spec (
+        input logic [18:0] IN1,
+        input logic [18:0] IN2,
         output logic adder_correct,
-        output logic [15:0] spec_res);
+        output logic [19:0] spec_res);
     
     assign spec_res = IN1 + IN2;
-    wire [15:0] adder_res;
-    JSkCond_15 adder(IN1, IN2, adder_res);
+    wire [19:0] adder_res;
+    JSkCond_19 adder(IN1, IN2, adder_res);
     assign adder_correct = ((spec_res == adder_res) ? 1 : 0);
     
 endmodule

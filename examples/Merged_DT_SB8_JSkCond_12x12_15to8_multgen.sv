@@ -38,25 +38,25 @@
 
 
 // Specification module to help understand what the design implements.
-module Merged_DT_SB16_JSkCond_12x12_15to8_spec (
+module Merged_DT_SB8_JSkCond_12x12_15to8_spec (
         input logic [11:0] IN1,
         input logic [11:0] IN2,
         input logic [0:0] IN3, //redundant
-        output logic design_is_correct, // is set to 1 iff the output of Merged_DT_SB16_JSkCond_12x12_15to8  matches its spec.
+        output logic design_is_correct, // is set to 1 iff the output of Merged_DT_SB8_JSkCond_12x12_15to8  matches its spec.
         output logic [15:8] design_res,
         output logic [15:8] spec_res);
     
     logic [15:0] tmp_spec_res;
     assign tmp_spec_res[15:0] = signed'(IN1) * signed'(IN2);
     assign spec_res = tmp_spec_res[15:8];
-    Merged_DT_SB16_JSkCond_12x12_15to8 mult(IN1, IN2, design_res);
+    Merged_DT_SB8_JSkCond_12x12_15to8 mult(IN1, IN2, design_res);
     assign design_is_correct = ((spec_res == design_res) ? 1 : 0);
     
 endmodule
 
 
 
-module DT_SB16_7x7(
+module DT_SB8_7x7(
         input logic [6:0] IN1,
         input logic [6:0] IN2,
         output logic [15:0] result0,
@@ -65,45 +65,31 @@ module DT_SB16_7x7(
     
 // Creating Partial Products 
 
+    wire logic const1;
+    assign const1 = 1'b1;
     wire [6:0] mult = IN1;
     wire [6:0] mcand = IN2;
-    wire [9:0] mcand_1x;
-    wire [9:0] mcand_2x;
-    wire [10:0] mcand_3x;
-    wire [9:0] mcand_4x;
-    wire [10:0] mcand_5x;
-    wire [9:0] mcand_6x;
-    wire [10:0] mcand_7x;
-    wire [9:0] mcand_8x;
-    assign mcand_1x = {{3{mcand[6]}},  mcand};
-    assign mcand_2x = {{2{mcand[6]}},  mcand, 1'b0};
-    JSkCond_10_carry calc_mcand_3x (1'b0, mcand_1x, mcand_2x, mcand_3x);
-    assign mcand_4x = {{1{mcand[6]}},  mcand, 2'b0};
-    JSkCond_10_carry calc_mcand_5x (1'b0, mcand_1x, mcand_4x, mcand_5x);
-    assign mcand_6x = {mcand_3x[8:0], 1'b0};
-    assign mcand_7x = mcand_8x - mcand_1x;
-    assign mcand_8x =  {{0{mcand[6]}},  mcand, 3'b0};
+    wire [8:0] mcand_1x;
+    wire [8:0] mcand_2x;
+    wire [8:0] mcand_3x;
+    wire [8:0] mcand_4x;
+    assign mcand_1x = {{2{mcand[6]}},  mcand};
+    assign mcand_2x = {{1{mcand[6]}},  mcand, 1'b0};
+    JSkCond_9_carry calc_mcand_3x (1'b0, mcand_1x, mcand_2x, mcand_3x);
+    assign mcand_4x = {{0{mcand[6]}},  mcand, 2'b0};
     
-    // Booth Radix-16 Partial Products. Multiplier selectors: mult[3] mult[2] mult[1] mult[0] 1'b0
-    wire logic select_e_0, select_2x_0, select_3x_0, select_4x_0, select_5x_0, select_6x_0, select_7x_0, select_8x_0, tcomp0, select_ne_0, select_n2x_0, select_n3x_0, select_n4x_0, select_n5x_0, select_n6x_0, select_n7x_0, select_n8x_0, select_0_0;
-    assign select_0_0 =  &{mult[3],  mult[2], mult[1], mult[0], 1'b0} | ~|{mult[3],  mult[2], mult[1], mult[0], 1'b0};
-    assign select_e_0 = ((~ mult[3]) & (~ mult[2]) & (~ mult[1]) & (mult[0] ^ 1'b0));
-    assign select_2x_0 = (~ mult[3]) & (~ mult[2]) & (mult[1] ^ mult[0])& (mult[1] ^ 1'b0);
-    assign select_3x_0 = (~ mult[3]) & (~ mult[2]) & mult[1] & (mult[0] ^ 1'b0);
-    assign select_4x_0 = (~mult[3]) &  (mult[2] ^ mult[1]) & (mult[2] ^ mult[0])& (mult[2] ^ 1'b0);
-    assign select_5x_0 =  (~mult[3]) &  mult[2] & (~mult[1]) & (mult[0] ^ 1'b0);
-    assign select_6x_0 = (~mult[3]) & mult[2] & (mult[1] ^ mult[0])& (mult[1] ^ 1'b0);
-    assign select_7x_0 =  (~mult[3]) &  mult[2] & mult[1] & (mult[0] ^ 1'b0);
-    assign select_8x_0 =  (~mult[3]) &  mult[2] & mult[1] & mult[0] & 1'b0;
-    assign select_n8x_0 =  mult[3] &  (~mult[2]) & (~mult[1]) & (~mult[0]) & (~1'b0);
-    assign select_n7x_0 = (( mult[3]) & (~ mult[2]) & (~ mult[1]) & (mult[0] ^ 1'b0));
-    assign select_n6x_0 = (mult[3]) & (~ mult[2]) & (mult[1] ^ mult[0])& (mult[1] ^ 1'b0);
-    assign select_n5x_0 = (mult[3]) & (~ mult[2]) & mult[1] & (mult[0] ^ 1'b0);
-    assign select_n4x_0 = (mult[3]) &  (mult[2] ^ mult[1]) & (mult[2] ^ mult[0])& (mult[2] ^ 1'b0);
-    assign select_n3x_0 =  (mult[3]) &  mult[2] & (~mult[1]) & (mult[0] ^ 1'b0);
-    assign select_n2x_0 = (mult[3]) & mult[2] & (mult[1] ^ mult[0])& (mult[1] ^ 1'b0);
-    assign select_ne_0 =  (mult[3]) &  mult[2] & mult[1] & (mult[0] ^ 1'b0);
-    reg [9:0] pp_0;
+    // Booth Radix-8 Partial Products. Multiplier selectors: mult[2] mult[1] mult[0] 1'b0
+    wire logic select_0_0, select_e_0, select_2x_0, select_3x_0, select_4x_0, tcomp0, select_ne_0, select_n2x_0, select_n3x_0, select_n4x_0;
+    assign select_0_0 =  &{mult[2], mult[1], mult[0], 1'b0} | ~|{mult[2], mult[1], mult[0], 1'b0};
+    assign select_e_0 = ((~ mult[2]) & (~ mult[1]) & (mult[0] ^ 1'b0));
+    assign select_ne_0 = mult[2] & mult[1] &  (mult[0] ^ 1'b0);
+    assign select_2x_0 = (~ mult[2]) & (mult[1] ^ mult[0])& (mult[1] ^ 1'b0);
+    assign select_n2x_0 = mult[2] & (mult[1] ^ mult[0])& (mult[1] ^ 1'b0);
+    assign select_3x_0 = ((~ mult[2]) & mult[1] & (mult[0] ^ 1'b0));
+    assign select_n3x_0 = (mult[2] & ~mult[1] & (mult[0] ^ 1'b0));
+    assign select_4x_0 = ~mult[2] & mult[1] & mult[0] & 1'b0;
+    assign select_n4x_0 = mult[2] & ~mult[1] & ~mult[0] & ~1'b0;
+    reg [8:0] pp_0;
     always @(*) begin
        case (1'b1)
           select_0_0   : pp_0 = 0; 
@@ -111,43 +97,27 @@ module DT_SB16_7x7(
           select_2x_0  : pp_0 = mcand_2x; 
           select_3x_0  : pp_0 = mcand_3x; 
           select_4x_0  : pp_0 = mcand_4x; 
-          select_5x_0  : pp_0 = mcand_5x; 
-          select_6x_0  : pp_0 = mcand_6x; 
-          select_7x_0  : pp_0 = mcand_7x; 
-          select_8x_0  : pp_0 = mcand_8x; 
-          select_n8x_0 : pp_0 = (~ mcand_8x); 
-          select_n7x_0 : pp_0 = (~ mcand_7x); 
-          select_n6x_0 : pp_0 = (~ mcand_6x); 
-          select_n5x_0 : pp_0 = (~ mcand_5x); 
           select_n4x_0 : pp_0 = (~ mcand_4x); 
           select_n3x_0 : pp_0 = (~ mcand_3x); 
           select_n2x_0 : pp_0 = (~ mcand_2x); 
           select_ne_0  : pp_0 = (~ mcand_1x); 
        endcase 
-       pp_0[9] = ~pp_0[9]; // flip the MSB 
+       pp_0[8] = ~pp_0[8]; // flip the MSB 
     end
-    assign tcomp0 = select_ne_0 | select_n8x_0 | select_n7x_0 | select_n6x_0 | select_n5x_0 | select_n4x_0 | select_n3x_0 | select_n2x_0;
+    assign tcomp0 = select_ne_0 | select_n4x_0 | select_n3x_0 | select_n2x_0;
     
-    // Booth Radix-16 Partial Products. Multiplier selectors: mult[6] mult[6] mult[5] mult[4] mult[3]
-    wire logic select_e_1, select_2x_1, select_3x_1, select_4x_1, select_5x_1, select_6x_1, select_7x_1, select_8x_1, tcomp1, select_ne_1, select_n2x_1, select_n3x_1, select_n4x_1, select_n5x_1, select_n6x_1, select_n7x_1, select_n8x_1, select_0_1;
-    assign select_0_1 =  &{mult[6],  mult[6], mult[5], mult[4], mult[3]} | ~|{mult[6],  mult[6], mult[5], mult[4], mult[3]};
-    assign select_e_1 = ((~ mult[6]) & (~ mult[6]) & (~ mult[5]) & (mult[4] ^ mult[3]));
-    assign select_2x_1 = (~ mult[6]) & (~ mult[6]) & (mult[5] ^ mult[4])& (mult[5] ^ mult[3]);
-    assign select_3x_1 = (~ mult[6]) & (~ mult[6]) & mult[5] & (mult[4] ^ mult[3]);
-    assign select_4x_1 = (~mult[6]) &  (mult[6] ^ mult[5]) & (mult[6] ^ mult[4])& (mult[6] ^ mult[3]);
-    assign select_5x_1 =  (~mult[6]) &  mult[6] & (~mult[5]) & (mult[4] ^ mult[3]);
-    assign select_6x_1 = (~mult[6]) & mult[6] & (mult[5] ^ mult[4])& (mult[5] ^ mult[3]);
-    assign select_7x_1 =  (~mult[6]) &  mult[6] & mult[5] & (mult[4] ^ mult[3]);
-    assign select_8x_1 =  (~mult[6]) &  mult[6] & mult[5] & mult[4] & mult[3];
-    assign select_n8x_1 =  mult[6] &  (~mult[6]) & (~mult[5]) & (~mult[4]) & (~mult[3]);
-    assign select_n7x_1 = (( mult[6]) & (~ mult[6]) & (~ mult[5]) & (mult[4] ^ mult[3]));
-    assign select_n6x_1 = (mult[6]) & (~ mult[6]) & (mult[5] ^ mult[4])& (mult[5] ^ mult[3]);
-    assign select_n5x_1 = (mult[6]) & (~ mult[6]) & mult[5] & (mult[4] ^ mult[3]);
-    assign select_n4x_1 = (mult[6]) &  (mult[6] ^ mult[5]) & (mult[6] ^ mult[4])& (mult[6] ^ mult[3]);
-    assign select_n3x_1 =  (mult[6]) &  mult[6] & (~mult[5]) & (mult[4] ^ mult[3]);
-    assign select_n2x_1 = (mult[6]) & mult[6] & (mult[5] ^ mult[4])& (mult[5] ^ mult[3]);
-    assign select_ne_1 =  (mult[6]) &  mult[6] & mult[5] & (mult[4] ^ mult[3]);
-    reg [9:0] pp_1;
+    // Booth Radix-8 Partial Products. Multiplier selectors: mult[5] mult[4] mult[3] mult[2]
+    wire logic select_0_1, select_e_1, select_2x_1, select_3x_1, select_4x_1, tcomp1, select_ne_1, select_n2x_1, select_n3x_1, select_n4x_1;
+    assign select_0_1 =  &{mult[5], mult[4], mult[3], mult[2]} | ~|{mult[5], mult[4], mult[3], mult[2]};
+    assign select_e_1 = ((~ mult[5]) & (~ mult[4]) & (mult[3] ^ mult[2]));
+    assign select_ne_1 = mult[5] & mult[4] &  (mult[3] ^ mult[2]);
+    assign select_2x_1 = (~ mult[5]) & (mult[4] ^ mult[3])& (mult[4] ^ mult[2]);
+    assign select_n2x_1 = mult[5] & (mult[4] ^ mult[3])& (mult[4] ^ mult[2]);
+    assign select_3x_1 = ((~ mult[5]) & mult[4] & (mult[3] ^ mult[2]));
+    assign select_n3x_1 = (mult[5] & ~mult[4] & (mult[3] ^ mult[2]));
+    assign select_4x_1 = ~mult[5] & mult[4] & mult[3] & mult[2];
+    assign select_n4x_1 = mult[5] & ~mult[4] & ~mult[3] & ~mult[2];
+    reg [8:0] pp_1;
     always @(*) begin
        case (1'b1)
           select_0_1   : pp_1 = 0; 
@@ -155,67 +125,100 @@ module DT_SB16_7x7(
           select_2x_1  : pp_1 = mcand_2x; 
           select_3x_1  : pp_1 = mcand_3x; 
           select_4x_1  : pp_1 = mcand_4x; 
-          select_5x_1  : pp_1 = mcand_5x; 
-          select_6x_1  : pp_1 = mcand_6x; 
-          select_7x_1  : pp_1 = mcand_7x; 
-          select_8x_1  : pp_1 = mcand_8x; 
-          select_n8x_1 : pp_1 = (~ mcand_8x); 
-          select_n7x_1 : pp_1 = (~ mcand_7x); 
-          select_n6x_1 : pp_1 = (~ mcand_6x); 
-          select_n5x_1 : pp_1 = (~ mcand_5x); 
           select_n4x_1 : pp_1 = (~ mcand_4x); 
           select_n3x_1 : pp_1 = (~ mcand_3x); 
           select_n2x_1 : pp_1 = (~ mcand_2x); 
           select_ne_1  : pp_1 = (~ mcand_1x); 
        endcase 
-       pp_1[9] = ~pp_1[9]; // flip the MSB 
+       pp_1[8] = ~pp_1[8]; // flip the MSB 
     end
-    assign tcomp1 = select_ne_1 | select_n8x_1 | select_n7x_1 | select_n6x_1 | select_n5x_1 | select_n4x_1 | select_n3x_1 | select_n2x_1;
+    assign tcomp1 = select_ne_1 | select_n4x_1 | select_n3x_1 | select_n2x_1;
+    
+    // Booth Radix-8 Partial Products. Multiplier selectors: mult[6] mult[6] mult[6] mult[5]
+    wire logic select_0_2, select_e_2, select_2x_2, select_3x_2, select_4x_2, tcomp2, select_ne_2, select_n2x_2, select_n3x_2, select_n4x_2;
+    assign select_0_2 =  &{mult[6], mult[6], mult[6], mult[5]} | ~|{mult[6], mult[6], mult[6], mult[5]};
+    assign select_e_2 = ((~ mult[6]) & (~ mult[6]) & (mult[6] ^ mult[5]));
+    assign select_ne_2 = mult[6] & mult[6] &  (mult[6] ^ mult[5]);
+    assign select_2x_2 = (~ mult[6]) & (mult[6] ^ mult[6])& (mult[6] ^ mult[5]);
+    assign select_n2x_2 = mult[6] & (mult[6] ^ mult[6])& (mult[6] ^ mult[5]);
+    assign select_3x_2 = ((~ mult[6]) & mult[6] & (mult[6] ^ mult[5]));
+    assign select_n3x_2 = (mult[6] & ~mult[6] & (mult[6] ^ mult[5]));
+    assign select_4x_2 = ~mult[6] & mult[6] & mult[6] & mult[5];
+    assign select_n4x_2 = mult[6] & ~mult[6] & ~mult[6] & ~mult[5];
+    reg [8:0] pp_2;
+    always @(*) begin
+       case (1'b1)
+          select_0_2   : pp_2 = 0; 
+          select_e_2   : pp_2 = mcand_1x; 
+          select_2x_2  : pp_2 = mcand_2x; 
+          select_3x_2  : pp_2 = mcand_3x; 
+          select_4x_2  : pp_2 = mcand_4x; 
+          select_n4x_2 : pp_2 = (~ mcand_4x); 
+          select_n3x_2 : pp_2 = (~ mcand_3x); 
+          select_n2x_2 : pp_2 = (~ mcand_2x); 
+          select_ne_2  : pp_2 = (~ mcand_1x); 
+       endcase 
+       pp_2[8] = ~pp_2[8]; // flip the MSB 
+    end
+    assign tcomp2 = select_ne_2 | select_n4x_2 | select_n3x_2 | select_n2x_2;
     
     // The values to be summed in the summation tree, from LSB (left) to MSB:
-     // pp_0[0] pp_0[1] pp_0[2] pp_0[3] pp_0[4] pp_0[5] pp_0[6] pp_0[7] pp_0[8] pp_0[9]   --      --      --      --    
-     //   --      --      --      --    pp_1[0] pp_1[1] pp_1[2] pp_1[3] pp_1[4] pp_1[5] pp_1[6] pp_1[7] pp_1[8] pp_1[9] 
-     // tcomp0    --      --      --    tcomp1    --      --      --      --      --      --      --      --      --    
-     //   --      --      --      --      --      --      --      --      --      --      --      --      --      --    
+     // pp_0[0] pp_0[1] pp_0[2] pp_0[3] pp_0[4] pp_0[5] pp_0[6] pp_0[7] pp_0[8]   --      --      --      --      --      --    
+     //   --      --      --    pp_1[0] pp_1[1] pp_1[2] pp_1[3] pp_1[4] pp_1[5] pp_1[6] pp_1[7] pp_1[8]   --      --      --    
+     //   --      --      --      --      --      --    pp_2[0] pp_2[1] pp_2[2] pp_2[3] pp_2[4] pp_2[5] pp_2[6] pp_2[7] pp_2[8] 
+     // tcomp0    --      --    tcomp1    --      --    tcomp2    --      --      --      --      --      --      --      --    
+     //   --      --      --      --      --      --      --      --      --      --      --      --      --      --      --    
     
 // Creating Summation Tree 
 
     
     // Dadda Summation Stage 1
     logic s0 ,c0;
-    ha ha0 (pp_0[4], pp_1[0], s0, c0);
+    ha ha0 (pp_0[6], pp_1[3], s0, c0);
     logic s1 ,c1;
-    ha ha1 (pp_0[5], pp_1[1], s1, c1);
+    ha ha1 (pp_0[7], pp_1[4], s1, c1);
     logic s2 ,c2;
-    ha ha2 (pp_0[6], pp_1[2], s2, c2);
+    ha ha2 (pp_0[8], pp_1[5], s2, c2);
+    
+    // Dadda Summation Stage 2
     logic s3 ,c3;
-    ha ha3 (pp_0[7], pp_1[3], s3, c3);
+    ha ha3 (pp_0[3], pp_1[0], s3, c3);
     logic s4 ,c4;
-    ha ha4 (pp_0[8], pp_1[4], s4, c4);
+    ha ha4 (pp_0[4], pp_1[1], s4, c4);
     logic s5 ,c5;
-    ha ha5 (pp_0[9], pp_1[5], s5, c5);
+    ha ha5 (pp_0[5], pp_1[2], s5, c5);
+    logic s6 ,c6; 
+    fa fa6 (pp_2[0], tcomp2, s0, s6, c6);
+    logic s7 ,c7; 
+    fa fa7 (pp_2[1], c0, s1, s7, c7);
+    logic s8 ,c8; 
+    fa fa8 (pp_2[2], c1, s2, s8, c8);
+    logic s9 ,c9; 
+    fa fa9 (pp_1[6], pp_2[3], c2, s9, c9);
+    logic s10 ,c10;
+    ha ha10 (pp_1[7], pp_2[4], s10, c10);
+    logic s11 ,c11;
+    ha ha11 (pp_1[8], pp_2[5], s11, c11);
     
     
-    assign result0[13:0] = {pp_1[9], pp_1[8], pp_1[7], pp_1[6], c4, c3, c2, c1, c0, tcomp1, pp_0[3], pp_0[2], pp_0[1], pp_0[0] };
-    assign result1[13:0] = {1'b0, 1'b0, 1'b0, c5, s5, s4, s3, s2, s1, s0, 1'b0, 1'b0, 1'b0, tcomp0 };
-    assign result0[14] = 1'b0;
-    assign result1[14] = 1'b0;
+    assign result0[14:0] = {pp_2[8], pp_2[7], pp_2[6], c10, c9, c8, c7, c6, c5, c4, c3, tcomp1, pp_0[2], pp_0[1], pp_0[0] };
+    assign result1[14:0] = {1'b0, 1'b0, c11, s11, s10, s9, s8, s7, s6, s5, s4, s3, 1'b0, 1'b0, tcomp0 };
     assign result0[15] = 1'b0;
     assign result1[15] = 1'b0;
 endmodule
 
 
 
-module JSkCond_10_carry ( 
+module JSkCond_9_carry ( 
         input logic carryin,
-        input logic [9:0] IN1,
-        input logic [9:0] IN2,
-        output logic [10:0] OUT);
+        input logic [8:0] IN1,
+        input logic [8:0] IN2,
+        output logic [9:0] OUT);
     
-    wire logic [9:0] p_0;
-    wire logic [9:0] g_0;
-    assign g_0[9:1] = IN1[9:1] & IN2[9:1];
-    assign p_0[9:1] = IN1[9:1] ^ IN2[9:1];
+    wire logic [8:0] p_0;
+    wire logic [8:0] g_0;
+    assign g_0[8:1] = IN1[8:1] & IN2[8:1];
+    assign p_0[8:1] = IN1[8:1] ^ IN2[8:1];
     fa m0 (carryin, IN1[0], IN2[0], p_0[0], g_0[0]);
     
     // J. Sklansky – Conditional Adder 
@@ -238,10 +241,6 @@ module JSkCond_10_carry (
     wire logic g_1_7;
     assign p_1_7 = p_0[7] & p_0[6];
     assign g_1_7 = (p_0[7] & g_0[6]) | g_0[7];
-    wire logic p_1_9;
-    wire logic g_1_9;
-    assign p_1_9 = p_0[9] & p_0[8];
-    assign g_1_9 = (p_0[9] & g_0[8]) | g_0[9];
     
     // Stage 2 - prop from 1 to 2 per group.
     wire logic p_2_2;
@@ -284,10 +283,6 @@ module JSkCond_10_carry (
     wire logic g_4_8;
     assign p_4_8 = p_0[8] & p_3_7;
     assign g_4_8 = (p_0[8] & g_3_7) | g_0[8];
-    wire logic p_4_9;
-    wire logic g_4_9;
-    assign p_4_9 = p_1_9 & p_3_7;
-    assign g_4_9 = (p_1_9 & g_3_7) | g_1_9;
     
     // JSkCondA postprocess 
     assign OUT[0] = p_0[0];
@@ -299,27 +294,26 @@ module JSkCond_10_carry (
     assign OUT[6] = p_0[6] ^ g_3_5;
     assign OUT[7] = p_0[7] ^ g_3_6;
     assign OUT[8] = p_0[8] ^ g_3_7;
-    assign OUT[9] = p_0[9] ^ g_4_8;
-    assign OUT[10] = g_4_9;
+    assign OUT[9] = g_4_8;
 endmodule
 
-module JSkCond_10_carry_spec (
+module JSkCond_9_carry_spec (
         input logic carryin,
-        input logic [9:0] IN1,
-        input logic [9:0] IN2,
+        input logic [8:0] IN1,
+        input logic [8:0] IN2,
         output logic adder_correct,
-        output logic [10:0] spec_res);
+        output logic [9:0] spec_res);
     
     assign spec_res = IN1 + IN2 + carryin;
-    wire [10:0] adder_res;
-    JSkCond_10_carry adder(carryin, IN1, IN2, adder_res);
+    wire [9:0] adder_res;
+    JSkCond_9_carry adder(carryin, IN1, IN2, adder_res);
     assign adder_correct = ((spec_res == adder_res) ? 1 : 0);
     
 endmodule
 
 
 
-module Merged_DT_SB16_JSkCond_12x12_15to8(
+module Merged_DT_SB8_JSkCond_12x12_15to8(
         input logic [11:0] IN1,
         input logic [11:0] IN2,
         output logic [15:8] result);
@@ -332,120 +326,126 @@ module Merged_DT_SB16_JSkCond_12x12_15to8(
     wire logic [15:0] m4_0;
     wire logic [15:0] m4_1;
     
-    DT_SB16_7x7 m1 ({1'b0, IN1[5:0]}, {1'b0, IN2[5:0]}, m1_0, m1_1);
-    DT_SB16_7x7 m2 ({IN2[11], IN2[11:6]}, {1'b0, IN1[5:0]}, m2_0, m2_1);
-    DT_SB16_7x7 m3 ({IN1[11], IN1[11:6]}, {1'b0, IN2[5:0]}, m3_0, m3_1);
-    DT_SB16_7x7 m4 ({IN1[11],IN1[11:6]}, {IN2[11], IN2[11:6]}, m4_0, m4_1);
+    DT_SB8_7x7 m1 ({1'b0, IN1[5:0]}, {1'b0, IN2[5:0]}, m1_0, m1_1);
+    DT_SB8_7x7 m2 ({IN2[11], IN2[11:6]}, {1'b0, IN1[5:0]}, m2_0, m2_1);
+    DT_SB8_7x7 m3 ({IN1[11], IN1[11:6]}, {1'b0, IN2[5:0]}, m3_0, m3_1);
+    DT_SB8_7x7 m4 ({IN1[11],IN1[11:6]}, {IN2[11], IN2[11:6]}, m4_0, m4_1);
     
     
     // The values to be summed in the summation tree, from LSB (left) to MSB:
-     // m1_0[0]  m1_0[1]  m1_0[2]  m1_0[3]  m1_0[4]  m1_0[5]  m1_0[6]  m1_0[7]  m1_0[8]  m1_0[9]  m1_0[10] m1_0[11] m1_0[12] m1_0[13]   --       --     
-     // m1_1[0]    --       --       --     m1_1[4]  m1_1[5]  m1_1[6]  m1_1[7]  m1_1[8]  m1_1[9]  m1_1[10]   --       --       --       --       --     
+     // m1_0[0]  m1_0[1]  m1_0[2]  m1_0[3]  m1_0[4]  m1_0[5]  m1_0[6]  m1_0[7]  m1_0[8]  m1_0[9]  m1_0[10] m1_0[11] m1_0[12] m1_0[13] m1_0[14]   --     
+     // m1_1[0]    --       --     m1_1[3]  m1_1[4]  m1_1[5]  m1_1[6]  m1_1[7]  m1_1[8]  m1_1[9]  m1_1[10] m1_1[11] m1_1[12]   --       --       --     
      //   --       --       --       --       --       --     m2_0[0]  m2_0[1]  m2_0[2]  m2_0[3]  m2_0[4]  m2_0[5]  m2_0[6]  m2_0[7]  m2_0[8]  m2_0[9]  
-     //   --       --       --       --       --       --     m2_1[0]    --       --       --     m2_1[4]  m2_1[5]  m2_1[6]  m2_1[7]  m2_1[8]  m2_1[9]  
+     //   --       --       --       --       --       --     m2_1[0]    --       --     m2_1[3]  m2_1[4]  m2_1[5]  m2_1[6]  m2_1[7]  m2_1[8]  m2_1[9]  
      //   --       --       --       --       --       --     m3_0[0]  m3_0[1]  m3_0[2]  m3_0[3]  m3_0[4]  m3_0[5]  m3_0[6]  m3_0[7]  m3_0[8]  m3_0[9]  
-     //   --       --       --       --       --       --     m3_1[0]    --       --       --     m3_1[4]  m3_1[5]  m3_1[6]  m3_1[7]  m3_1[8]  m3_1[9]  
+     //   --       --       --       --       --       --     m3_1[0]    --       --     m3_1[3]  m3_1[4]  m3_1[5]  m3_1[6]  m3_1[7]  m3_1[8]  m3_1[9]  
      //   --       --       --       --       --       --       --       --       --       --       --       --     m4_0[0]  m4_0[1]  m4_0[2]  m4_0[3]  
-     //   --       --       --       --       --       --       --       --       --       --       --       --     m4_1[0]    --       --       --     
+     //   --       --       --       --       --       --       --       --       --       --       --       --     m4_1[0]    --       --     m4_1[3]  
      //   --       --       --       --       --       --       --       --       --       --       --       --       --       --       --       --     
-     //   --       --       --       --       --       --       --       --       --     1'b1     1'b1     1'b1     1'b1       --     1'b1     1'b1     
+     //   --       --       --       --       --       --       --       --     1'b1     1'b1     1'b1       --     1'b1     1'b1       --       --     
     
     // Dadda Summation Stage 1
     logic s0 ,c0;
-    ha ha0 (m1_0[10], m1_1[10], s0, c0);
-    logic s1 ,c1;
-    ha ha1 (m1_0[11], m2_0[5], s1, c1);
-    logic s2 ,c2; 
-    fa fa2 (m1_0[12], m2_0[6], m2_1[6], s2, c2);
-    logic s3 ,c3;
-    ha ha3 (m3_0[6], m3_1[6], s3, c3);
+    ha ha0 (m1_0[9], m1_1[9], s0, c0);
+    logic s1 ,c1; 
+    fa fa1 (m1_0[10], m1_1[10], m2_0[4], s1, c1);
+    logic s2 ,c2;
+    ha ha2 (m1_0[11], m1_1[11], s2, c2);
+    logic s3 ,c3; 
+    fa fa3 (m1_0[12], m1_1[12], m2_0[6], s3, c3);
     logic s4 ,c4; 
-    fa fa4 (m1_0[13], m2_0[7], m2_1[7], s4, c4);
-    logic s5 ,c5;
-    ha ha5 (m2_0[8], m2_1[8], s5, c5);
+    fa fa4 (m2_1[6], m3_0[6], m3_1[6], s4, c4);
+    logic s5 ,c5; 
+    fa fa5 (m1_0[13], m2_0[7], m2_1[7], s5, c5);
     logic s6 ,c6;
-    ha ha6 (m2_0[9], m2_1[9], s6, c6);
+    ha ha6 (m3_0[7], m3_1[7], s6, c6);
+    logic s7 ,c7; 
+    fa fa7 (m1_0[14], m2_0[8], m2_1[8], s7, c7);
+    logic s8 ,c8;
+    ha ha8 (m2_0[9], m2_1[9], s8, c8);
     
     // Dadda Summation Stage 2
-    logic s7 ,c7; 
-    fa fa7 (m1_0[6], m1_1[6], m2_0[0], s7, c7);
-    logic s8 ,c8;
-    ha ha8 (m1_0[7], m1_1[7], s8, c8);
-    logic s9 ,c9;
-    ha ha9 (m1_0[8], m1_1[8], s9, c9);
-    logic s10 ,c10; 
-    fa fa10 (m1_0[9], m1_1[9], m2_0[3], s10, c10);
+    logic s9 ,c9; 
+    fa fa9 (m1_0[6], m1_1[6], m2_0[0], s9, c9);
+    logic s10 ,c10;
+    ha ha10 (m1_0[7], m1_1[7], s10, c10);
     logic s11 ,c11; 
-    fa fa11 (m2_0[4], m2_1[4], m3_0[4], s11, c11);
-    logic s12 ,c12;
-    ha ha12 (m3_1[4], 1'b1, s12, c12);
-    logic s13 ,c13; 
-    fa fa13 (m2_1[5], m3_0[5], m3_1[5], s13, c13);
+    fa fa11 (m1_0[8], m1_1[8], m2_0[2], s11, c11);
+    logic s12 ,c12; 
+    fa fa12 (m2_0[3], m2_1[3], m3_0[3], s12, c12);
+    logic s13 ,c13;
+    ha ha13 (m3_1[3], 1'b1, s13, c13);
     logic s14 ,c14; 
-    fa fa14 (1'b1, c0, s1, s14, c14);
+    fa fa14 (m2_1[4], m3_0[4], m3_1[4], s14, c14);
     logic s15 ,c15; 
-    fa fa15 (m4_0[0], m4_1[0], 1'b1, s15, c15);
+    fa fa15 (1'b1, c0, s1, s15, c15);
     logic s16 ,c16; 
-    fa fa16 (c1, s2, s3, s16, c16);
+    fa fa16 (m2_0[5], m2_1[5], m3_0[5], s16, c16);
     logic s17 ,c17; 
-    fa fa17 (m3_0[7], m3_1[7], m4_0[1], s17, c17);
+    fa fa17 (m3_1[5], c1, s2, s17, c17);
     logic s18 ,c18; 
-    fa fa18 (c2, c3, s4, s18, c18);
+    fa fa18 (m4_0[0], m4_1[0], 1'b1, s18, c18);
     logic s19 ,c19; 
-    fa fa19 (m3_0[8], m3_1[8], m4_0[2], s19, c19);
+    fa fa19 (c2, s3, s4, s19, c19);
     logic s20 ,c20; 
-    fa fa20 (1'b1, c4, s5, s20, c20);
+    fa fa20 (m4_0[1], 1'b1, c3, s20, c20);
     logic s21 ,c21; 
-    fa fa21 (m3_0[9], m3_1[9], m4_0[3], s21, c21);
+    fa fa21 (c4, s5, s6, s21, c21);
     logic s22 ,c22; 
-    fa fa22 (1'b1, c5, s6, s22, c22);
+    fa fa22 (m3_0[8], m3_1[8], m4_0[2], s22, c22);
+    logic s23 ,c23; 
+    fa fa23 (c5, c6, s7, s23, c23);
+    logic s24 ,c24; 
+    fa fa24 (m3_0[9], m3_1[9], m4_0[3], s24, c24);
+    logic s25 ,c25; 
+    fa fa25 (m4_1[3], c7, s8, s25, c25);
     
     // Dadda Summation Stage 3
-    logic s23 ,c23;
-    ha ha23 (m2_1[0], m3_0[0], s23, c23);
-    logic s24 ,c24; 
-    fa fa24 (m2_0[1], m3_0[1], c7, s24, c24);
-    logic s25 ,c25; 
-    fa fa25 (m2_0[2], m3_0[2], c8, s25, c25);
-    logic s26 ,c26; 
-    fa fa26 (m3_0[3], 1'b1, c9, s26, c26);
+    logic s26 ,c26;
+    ha ha26 (m2_1[0], m3_0[0], s26, c26);
     logic s27 ,c27; 
-    fa fa27 (s0, c10, s11, s27, c27);
+    fa fa27 (m2_0[1], m3_0[1], c9, s27, c27);
     logic s28 ,c28; 
-    fa fa28 (c11, c12, s13, s28, c28);
+    fa fa28 (m3_0[2], 1'b1, c10, s28, c28);
     logic s29 ,c29; 
-    fa fa29 (c13, c14, s15, s29, c29);
+    fa fa29 (s0, c11, s12, s29, c29);
     logic s30 ,c30; 
-    fa fa30 (c15, c16, s17, s30, c30);
+    fa fa30 (c12, c13, s14, s30, c30);
     logic s31 ,c31; 
-    fa fa31 (c17, c18, s19, s31, c31);
+    fa fa31 (c14, c15, s16, s31, c31);
     logic s32 ,c32; 
-    fa fa32 (c19, c20, s21, s32, c32);
+    fa fa32 (c16, c17, s18, s32, c32);
+    logic s33 ,c33; 
+    fa fa33 (c18, c19, s20, s33, c33);
+    logic s34 ,c34; 
+    fa fa34 (c20, c21, s22, s34, c34);
+    logic s35 ,c35; 
+    fa fa35 (c22, c23, s24, s35, c35);
     
     // Dadda Summation Stage 4
-    logic s33 ,c33;
-    ha ha33 (m3_1[0], s7, s33, c33);
-    logic s34 ,c34; 
-    fa fa34 (s8, c23, s24, s34, c34);
-    logic s35 ,c35; 
-    fa fa35 (s9, c24, s25, s35, c35);
-    logic s36 ,c36; 
-    fa fa36 (s10, c25, s26, s36, c36);
+    logic s36 ,c36;
+    ha ha36 (m3_1[0], s9, s36, c36);
     logic s37 ,c37; 
-    fa fa37 (s12, c26, s27, s37, c37);
+    fa fa37 (s10, c26, s27, s37, c37);
     logic s38 ,c38; 
-    fa fa38 (s14, c27, s28, s38, c38);
+    fa fa38 (s11, c27, s28, s38, c38);
     logic s39 ,c39; 
-    fa fa39 (s16, c28, s29, s39, c39);
+    fa fa39 (s13, c28, s29, s39, c39);
     logic s40 ,c40; 
-    fa fa40 (s18, c29, s30, s40, c40);
+    fa fa40 (s15, c29, s30, s40, c40);
     logic s41 ,c41; 
-    fa fa41 (s20, c30, s31, s41, c41);
+    fa fa41 (s17, c30, s31, s41, c41);
     logic s42 ,c42; 
-    fa fa42 (s22, c31, s32, s42, c42);
+    fa fa42 (s19, c31, s32, s42, c42);
+    logic s43 ,c43; 
+    fa fa43 (s21, c32, s33, s43, c43);
+    logic s44 ,c44; 
+    fa fa44 (s23, c33, s34, s44, c44);
+    logic s45 ,c45; 
+    fa fa45 (s25, c34, s35, s45, c45);
     
     logic [16:0] adder_result;
-    JSkCond_16 final_adder ({c41, c40, c39, c38, c37, c36, c35, c34, c33, s23, m1_0[5], m1_0[4], m1_0[3], m1_0[2], m1_0[1], m1_0[0] }, {s42, s41, s40, s39, s38, s37, s36, s35, s34, s33, m1_1[5], m1_1[4], 1'b0, 1'b0, 1'b0, m1_1[0] }, adder_result );
+    JSkCond_16 final_adder ({c44, c43, c42, c41, c40, c39, c38, c37, c36, s26, m1_0[5], m1_0[4], m1_0[3], m1_0[2], m1_0[1], m1_0[0] }, {s45, s44, s43, s42, s41, s40, s39, s38, s37, s36, m1_1[5], m1_1[4], m1_1[3], 1'b0, 1'b0, m1_1[0] }, adder_result );
     assign result[15:8] = adder_result[15:8];
 
 endmodule

@@ -35,3 +35,7 @@
 *.v
 
 *~
+
+*.cert*
+*.fasl
+*.port

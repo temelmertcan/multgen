@@ -413,6 +413,7 @@ int interact_with_user (int argc, char **argv,
         cout << "Invalid Selection! Try again!" << endl;
     }
 
+
   if (final_stage_adder != "RP" &&
       final_stage_adder != "HC" &&
       final_stage_adder != "LF" &&
@@ -645,7 +646,7 @@ int interact_with_user (int argc, char **argv,
 	allowXes = true;
         break;
       }else  if (s.compare ("2") == 0) {
-        pp_encoding = signed_mult ? "SB2" : "UB2";
+        //pp_encoding = signed_mult ? "SB2" : "UB2";
 	allowXes = false;
         break;
       }else

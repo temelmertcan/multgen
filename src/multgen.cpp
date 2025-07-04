@@ -870,6 +870,34 @@ int create_mult ( int  in1_size,
 
   print_pp (pp_matrix, pp_dim1, pp_dim2, verilog, true);
 
+  // if (!extra_ones_indices.empty()){
+  //   cout << "extra_ones_indices ";
+  //   for (auto e : extra_ones_indices)
+  //     cout << e << " ";
+  //   cout << endl;
+  // }
+
+  // For information printing purposes only:
+  string extra_ones_for_partial_mult = ""; // for partial mults, the extra ones may not be included.
+  if (!extra_ones_indices.empty()){
+    //verilog.push("\n// Extra_ones: \n");
+    // cout << "extra_ones_indices: ";
+    // for (auto i : extra_ones_indices)
+    //   cout << i << " ";
+    // cout << endl;
+    string * extra_ones;
+    add_extra_ones_to_pp_matrix (extra_ones, pp_dim2, extra_ones_indices);
+    for (int i = pp_dim2-1; i>=0; i--)
+      extra_ones_for_partial_mult += (extra_ones[i]=="1'b1"?"1":"0");
+    //verilog.push("indent");
+    verilog.push("");
+    verilog.push ("// Extra ones that help with sign extension are not included in the multiplication.");
+    verilog.push ("// To get the full multiplication result, you'd need to add b" + extra_ones_for_partial_mult + " to the tree above");
+    //verilog.push("outdent");
+  }
+ 
+    
+
   verilog.push("\n// Creating Summation Tree \n");
 
   if (tree.compare ("WT") == 0) {
@@ -908,6 +936,8 @@ int create_mult ( int  in1_size,
 
   verilog.push("");
 
+  
+
   cout << endl;
   cout << "Multiplier Module (" << module_name << ") is created." << endl;
   cout << "   Inputs: IN1[" << in1_size-1 << ":0], IN2[" << in2_size-1 << ":0]" << endl;
@@ -916,7 +946,7 @@ int create_mult ( int  in1_size,
     cout << "   Function: result = IN1 * IN2" << (shift_amount==0?"":" >> "+to_string(shift_amount)) << (signed_mult?" (signed)":" (unsigned)") << endl;
   }else{
     cout << "   Outputs: result0[" << out_size-1 << ":0], result1[" << out_size-1 << ":0]" << endl;
-    cout << "   Function: result0+result1 = partial IN1 * IN2 " << (signed_mult?"(signed)":"(unsigned)") << " without complete sign extension." << endl;
+    cout << "   Function: IN1 * IN2 " << (signed_mult?"(signed)":"(unsigned)") << " = result0 + result1 + "<< pp_dim2 << "'b" << extra_ones_for_partial_mult << " (Extra ones are to complete the sign extension)." << endl;
   }
 
 
@@ -1696,7 +1726,9 @@ int create_dot (int  in1_size,
     }
 
     std::list<int> in3_extra_ones_indices;
-    in3_extra_ones_indices.push_back(in3_size-1);
+    if (in3_size != 0)
+      in3_extra_ones_indices.push_back(in3_size-1);
+    
     merged_extra_ones_indices =   merge_extra_ones_indices (merged_extra_ones_indices,
                                                             in3_extra_ones_indices,
                                                             0);

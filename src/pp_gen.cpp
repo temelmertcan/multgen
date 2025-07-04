@@ -48,6 +48,10 @@ std::list<int> merge_extra_ones_indices (const std::list<int>& extra_ones_indice
                                          const std::list<int>& extra_ones_indices2,
                                          const int& offset2){
 
+
+ 
+    
+
   int carry = -1;
 
   std::list<int> result;
@@ -89,10 +93,47 @@ std::list<int> merge_extra_ones_indices (const std::list<int>& extra_ones_indice
   if (carry != -1)
     result.push_back(carry);
 
+
+  // { // Print some stuff for debugging.
+  //   cout << "Merging two extra ones indices:" << endl;
+  //   cout << "extra_ones_indices1 " ;
+  //   for (auto e: extra_ones_indices1)
+  //     cout << e << " ";
+  //   cout << endl;
+  //   cout << "extra_ones_indices2 " ;
+  //   for (auto e: extra_ones_indices2)
+  //     cout << e << " ";
+  //   cout << endl;
+  //   cout << "result: " ;
+  //   for (auto e: result)
+  //     cout << e << " ";
+  //   cout << endl;
+  // }
+  
+
   return result;
 
 }
 
+// Extra  ones indices  represent  where a  repeated  1'b1 sequence  should
+// start. For example, if the list has  8 10 12 14, then "8" indicates that
+// there should be 1'b1 in the summation in columns 8,9,10,11.... similarly
+// for the  element "10", then we  need to sum  1'b1 in columns 10,  11, 12
+// ,13... The thing is,  we do not actually need to sum  all those ones. We
+// can  do  constant  propagation  and  sum them  ahead  of  time.  So  for
+// 8,10,12,14, our summation represents:
+
+// - - - - - - - - 1 1 1 1 1 1 1 1
+// - - - - - - - - - - 1 1 1 1 1 1
+// - - - - - - - - - - - - 1 1 1 1
+// - - - - - - - - - - - - - - 1 1
+// ==
+// - - - - - - - - 1 1 - 1 - 1 - 1
+
+// we don't care about what happens after msb.  As we pass the first index,
+// we can think of  the summation as always having a carry,  so we fill any
+// non-index match with 1, and index match with 0s.
+ 
 // calcualtes necessary extra ones to be added so that extra ones would be carried over from the result.
 void add_extra_ones_to_pp_matrix (string *& last_row, int col_size, const std::list<int>& extra_ones_indices){
 
